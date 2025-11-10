@@ -1,3 +1,4 @@
+import { FaGithub } from "react-icons/fa";
 import { useNavigate } from "react-router";
 
 export default function Header() {
@@ -6,7 +7,6 @@ export default function Header() {
   return (
     <header className="bg-black border-b-2 border-yellow-500/50 p-4">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
-        {/* Logo + App Name */}
         <div
           onClick={() => navigate("/")}
           className="flex items-center gap-3 cursor-pointer group"
@@ -21,21 +21,15 @@ export default function Header() {
           </span>
         </div>
 
-        {/* Optional: Right side links (e.g., Docs / GitHub) */}
         <nav className="hidden md:flex items-center gap-6 text-yellow-300 text-sm">
           <a
             href="https://github.com/mistic0xb"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-yellow-200 transition-colors"
+            className="text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-2"
           >
+            <FaGithub size={24} />
             GitHub
-          </a>
-          <a
-            href="/create"
-            className="hover:text-yellow-200 transition-colors"
-          >
-            Create Board
           </a>
         </nav>
       </div>
