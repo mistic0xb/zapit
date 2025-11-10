@@ -5,7 +5,7 @@ import { parseZapReceipt } from './nip57';
 
 export const DEFAULT_RELAYS = [
     'wss://relay.damus.io',
-    'wss://relay.nostr.band',
+    "wss://debugrelay.angor.online",
     'wss://nos.lol',
     'wss://relay.snort.social',
 ];
@@ -52,8 +52,6 @@ export async function publishBoardConfig(
         Promise.all(pubs),
         new Promise(resolve => setTimeout(resolve, 5000))
     ]);
-
-    console.log('✅ Board config published to relays');
 }
 
 /**
@@ -98,11 +96,9 @@ export async function fetchBoardConfig(
                             creatorPubkey: event.pubkey,
                             createdAt: content.createdAt,
                         };
-
-                        console.log('✅ Board config fetched:', config);
                         resolve(config);
                     } catch (err) {
-                        console.error('❌ Failed to parse board config:', err);
+                        console.error('Failed to parse board config !:', err);
                         resolve(null);
                     }
                 },
@@ -128,7 +124,7 @@ export function subscribeToMessages(
 
     const filter: Filter = {
         kinds: [1337],
-        '#e': [boardId], // ✅ Indexed tag for relay filtering
+        '#e': [boardId], // Indexed tag for relay filtering
         since: Math.floor(Date.now() / 1000) - 86400,
     };
 
@@ -149,11 +145,9 @@ export function subscribeToMessages(
                         sender: senderTag?.[1],
                         timestamp: event.created_at * 1000,
                     };
-
-                    console.log('📩 Message received:', message);
                     onMessage(message);
                 } catch (err) {
-                    console.error('❌ Failed to parse message:', err);
+                    console.error('Failed to parse message:', err);
                 }
             },
         }
@@ -179,7 +173,7 @@ export async function publishMessage(
         kind: 1337,
         created_at: Math.floor(Date.now() / 1000),
         tags: [
-            ['e', boardId], // ✅ Use indexed 'e' tag
+            ['e', boardId], // Use indexed 'e' tag
             ['amount', zapAmount.toString()],
             ...(sender ? [['sender', sender]] : []),
         ],
@@ -187,7 +181,6 @@ export async function publishMessage(
     };
 
     const signedEvent = finalizeEvent(event, privateKey);
-    console.log('📤 Publishing message event:', signedEvent);
 
     const pubs = pool.publish(DEFAULT_RELAYS, signedEvent);
 
@@ -195,8 +188,6 @@ export async function publishMessage(
         Promise.all(pubs),
         new Promise(resolve => setTimeout(resolve, 3000))
     ]);
-
-    console.log('✅ Message published to relays');
 }
 
 /**
@@ -220,22 +211,22 @@ export function monitorZapReceipts(
         filter,
         {
             onevent: async (event: Event) => {
-                console.log('⚡ Zap receipt received:', event);
+                console.log('Zap receipt received:', event);
 
                 try {
                     const zapInfo = parseZapReceipt(event);
                     
                     if (!zapInfo) {
-                        console.log('⚠️ Could not parse zap receipt');
+                        console.log(" Could not parse zap receipt");
                         return;
                     }
 
                     if (zapInfo.boardId !== boardId) {
-                        console.log('⚠️ Zap not for this board');
+                        console.log('Zap not for this board');
                         return;
                     }
 
-                    console.log('✅ Zap for this board:', zapInfo);
+                    console.log('Zap for this board:', zapInfo);
 
                     const privateKey = generateSecretKey();
                     await publishMessage(
@@ -247,7 +238,7 @@ export function monitorZapReceipts(
                     );
 
                     const message: ZapMessage = {
-                        id: event.id + '-msg',
+                        id: event.id,
                         boardId,
                         content: zapInfo.message,
                         zapAmount: zapInfo.amount,
@@ -257,12 +248,12 @@ export function monitorZapReceipts(
 
                     onNewMessage(message);
                 } catch (error) {
-                    console.error('❌ Failed to process zap receipt:', error);
+                    console.error("Failed to process zap receipt:", error);
                 }
             },
         }
     );
 
-    console.log('👀 Monitoring zap receipts for pubkey:', recipientPubkey);
+    console.log("Monitoring zap receipts for pubkey:", recipientPubkey);
     return () => sub.close();
 }

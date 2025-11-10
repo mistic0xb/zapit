@@ -18,3 +18,23 @@ body {
 .animate-fadeIn {
   animation: fadeIn 0.5s ease-out;
 }
+
+/* Custom scrollbar for message feed */
+.scrollbar-custom {
+  scrollbar-width: thin;          /* Firefox */
+  scrollbar-color: #b49a30 #000; /* thumb color, track color */
+}
+
+.scrollbar-custom::-webkit-scrollbar {
+  width: 8px;                     /* Chrome, Edge, Safari */
+}
+
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background-color: #fae26c;
+  border-radius: 9999px;
+  border: 2px solid #000000;
+}

@@ -1,46 +1,51 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { validateLightningAddress } from "../libs/lighting";
-import { generateBoardId, generateEphemeralKeys } from "../libs/crypto";
-import type { BoardConfig } from "../types";
+import {
+  decryptNwc,
+  encryptNwc,
+  generateBoardId,
+  generateEphemeralKeys,
+} from "../libs/crypto";
+import type { BoardConfig, StoredBoard } from "../types";
 import { validateNWC } from "../libs/nwc";
 import { publishBoardConfig } from "../libs/nostr";
-import { bytesToHex } from "nostr-tools/utils";
 import RetroFrame from "../components/Frame";
 
 function CreateBoard() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<"info" | "nwc">("info");
+  const [step, setStep] = useState<"info" | "usePrevious" | "nwc">("info");
 
   // Board settings
   const [displayName, setDisplayName] = useState("");
   const [lightningAddress, setLightningAddress] = useState("");
   const [minZapAmount, setMinZapAmount] = useState(1000);
 
-  // NWC string
+  // NWC string + password
   const [nwcString, setNwcString] = useState("");
   const [password, setPassword] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState("");
 
-  // Check if a board is present
-  // useEffect(() => {
-  //   const boards = JSON.parse(localStorage.getItem("boards") || "[]");
-  //   if(boards.length)
-  // })
+  // Load existing boards from localStorage
+  const [prevBoards, setPrevBoards] = useState<StoredBoard[]>([]);
+  const [selectedBoard, setSelectedBoard] = useState<StoredBoard>(); 
+  const [selectedBoardPassword, setSelectedBoardPassword] = useState("");
+
+  useEffect(() => {
+    const boards: StoredBoard[] = JSON.parse(
+      localStorage.getItem("boards") || "[]"
+    );
+    if (boards.length) setPrevBoards(boards);
+  }, []);
 
   const handleNext = async () => {
-    if (!displayName.trim()) {
-      setError("Please enter a board name");
-      return;
-    }
-    if (!lightningAddress.trim()) {
+    if (!displayName.trim()) setError("Please enter a board name");
+    if (!lightningAddress.trim())
       setError("Please enter your Lightning address");
-      return;
-    }
 
-    setIsValidating(false);
     setError("");
+    setIsValidating(false);
 
     const validation = await validateLightningAddress(lightningAddress);
 
@@ -65,15 +70,12 @@ function CreateBoard() {
 
     try {
       // Step 1: Validate NWC
-      console.log("Validating NWC...");
       const nwcValidation = await validateNWC(nwcString);
       if (!nwcValidation.valid) {
         throw new Error(nwcValidation.error || "Invalid NWC connection");
       }
-      console.log("NWC validated:", nwcValidation.info);
 
       // Step 2: Generate ephemeral keys
-      console.log("Generating ephemeral keys...");
       const { privateKey, publicKey } = generateEphemeralKeys();
 
       // Step 3: Generate board ID
@@ -88,18 +90,21 @@ function CreateBoard() {
         creatorPubkey: publicKey,
         createdAt: Date.now(),
       };
-      console.log("Board created:", boardConfig);
 
-      // Step 5: Publish to Nostr ??
-      console.log("Publishing to Nostr relays...");
+      // Step 5: Publish to Nostr
       await publishBoardConfig(boardConfig, privateKey);
 
-      // Step 6: Store in localStorage (temporary, no NWC stored)
-      const boards = JSON.parse(localStorage.getItem("boards") || "[]");
+      // Encrypt NWC string with password
+      const encryptedNWC = encryptNwc(nwcString, password);
+
+      // Step 6: Store in localStorage
+      const boards: StoredBoard[] = JSON.parse(
+        localStorage.getItem("boards") || "[]"
+      );
       boards.push({
         boardId,
         config: boardConfig,
-        privateKey: bytesToHex(privateKey), // Store ephemeral key
+        encryptedNwcString: encryptedNWC,
         createdAt: Date.now(),
       });
       localStorage.setItem("boards", JSON.stringify(boards));
@@ -116,16 +121,76 @@ function CreateBoard() {
     }
   };
 
+  const renderUsePreviousStep = () => (
+    <div className="space-y-4">
+      <h2 className="text-yellow-300 font-bold mb-2">Select a Board</h2>
+
+      {prevBoards.map((board) => (
+        <div key={board.boardId} className="space-y-2">
+          <button
+            onClick={() => {
+              setSelectedBoard(board); // Updated: select board to show password input
+              setSelectedBoardPassword("");
+              setError("");
+            }}
+            className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 uppercase border-2 border-yellow-300 transition-all duration-200"
+          >
+            {board.config.displayName}
+          </button>
+        </div>
+      ))}
+
+      {selectedBoard && (
+        <form onSubmit={(e) => e.preventDefault()} className="space-y-2 mt-4">
+          <input
+            type="text"
+            value={selectedBoardPassword}
+            onChange={(e) => setSelectedBoardPassword(e.target.value)}
+            placeholder="Enter password for this board"
+            className="w-full px-4 py-3 bg-black border-2 border-yellow-400 text-white placeholder-yellow-700 focus:outline-none focus:border-brightGreen"
+          />
+          <button
+            onClick={() => {
+              try {
+                const decryptedNWC = decryptNwc(
+                  selectedBoard.encryptedNwcString,
+                  selectedBoardPassword
+                );
+                navigate(`/dashboard/${selectedBoard.boardId}`, {
+                  state: { nwcString: decryptedNWC },
+                });
+              } catch {
+                setError("Incorrect password or failed to decrypt NWC");
+              }
+            }}
+            className="w-full bg-green-400 hover:bg-green-600 text-black font-bold py-2 uppercase border-2 border-green-300 transition-all duration-200"
+          >
+            Use Board
+          </button>
+        </form>
+      )}
+
+      <button
+        onClick={() => setStep("info")}
+        className="w-full bg-black border-2 border-yellow-400 text-yellow-300 font-bold py-3 uppercase hover:bg-gray-500 hover:text-white transition-all duration-200"
+      >
+        Back
+      </button>
+
+      {error && <p className="text-red-400 text-sm">{error}</p>}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-black p-8 flex items-center justify-center">
       <div className="w-full h-full max-w-5xl mx-auto">
         <RetroFrame className="h-full">
           <div className="max-w-lg w-full mx-auto p-8">
-            <h2 className="text-3xl font-bold text-yellow-400 mb-6 uppercase">
-              Create Your Board
-            </h2>
-
+            {(step === "info" || step === "nwc") && (
+              <h2 className="text-3xl font-bold text-yellow-400 mb-6 uppercase">
+                Create Your Board
+              </h2>
+            )}
             {step === "info" && (
               <div className="space-y-6">
                 <div>
@@ -149,7 +214,7 @@ function CreateBoard() {
                     type="text"
                     value={lightningAddress}
                     onChange={(e) => setLightningAddress(e.target.value)}
-                    placeholder="you@getalby.com"
+                    placeholder="mist@coinos.io"
                     className="w-full px-4 py-3 bg-black text-white placeholder-gray-400 border-2 border-yellow-400 focus:outline-none focus:border-brightGreen"
                   />
                   <p className="text-white/60 text-sm mt-2">
@@ -177,9 +242,18 @@ function CreateBoard() {
                 >
                   Next
                 </button>
+
+                {/* ==== User Previous Boards Button ==== */}
+                {prevBoards.length > 0 && (
+                  <button
+                    onClick={() => setStep("usePrevious")}
+                    className="w-full bg-black border-2 border-yellow-400 text-yellow-300 font-bold py-3 uppercase hover:bg-gray-500 hover:text-white transition-all duration-200 mt-2"
+                  >
+                    Use Previous Board
+                  </button>
+                )}
               </div>
             )}
-
             {step === "nwc" && (
               // Enter Nwc String
               <div className="space-y-4">
@@ -229,6 +303,8 @@ function CreateBoard() {
                 </div>
               </div>
             )}
+            {step === "usePrevious" && renderUsePreviousStep()}{" "}
+            {/* Updated: render previous board step */}
           </div>
         </RetroFrame>
       </div>

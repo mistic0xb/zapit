@@ -54,10 +54,10 @@ export async function generateInvoice(params: GenerateInvoiceParams): Promise<{
             relays: [
                 'wss://relay.damus.io',
                 'wss://nos.lol',
-                'wss://debugrelay.angor.online'
+                'wss://debugrelay.angor.online',
+                'wss://relay.snort.social',
             ],
         });
-        console.log(JSON.stringify(zapRequestTemplate))
 
         zapRequestTemplate.content = message;
 
@@ -72,8 +72,6 @@ export async function generateInvoice(params: GenerateInvoiceParams): Promise<{
         if (validationError) {
             throw new Error(`Invalid zap request: ${validationError}`);
         }
-
-        console.log('Zap request created:', signedZapRequest);
 
         // Request invoice from LNURL callback
         const callbackUrl = new URL(lnurlData.callback);

@@ -26,6 +26,5 @@ export interface StoredBoard {
   boardId: string;
   encryptedNwcString: string,
   config: BoardConfig;
-  privateKey: string; // hex string for storage
   createdAt: number;
 }

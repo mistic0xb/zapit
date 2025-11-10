@@ -49,11 +49,10 @@ function Dashboard() {
       const nwc = await createNWCInstance(nwcStr);
       const info = await nwc.getInfo();
 
-      console.log("NWC connected:", info);
       setNwcConnected(true);
       setShowNwcInput(false);
 
-      // TODO: Start listening for payments
+      // Start listening for payments
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to connect NWC");
       setNwcConnected(false);
@@ -73,19 +72,14 @@ function Dashboard() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     // TODO: Show toast notification
-    alert("Copied to clipboard!");
   };
 
   if (error && !boardConfig) {
-    return (
-        <div className="text-red-400 text-xl font-mono">{error}</div>
-    );
+    return <div className="text-red-400 text-xl font-mono">{error}</div>;
   }
 
   if (!boardConfig) {
-    return (
-        <div className="text-yellow-300 text-xl font-mono">Loading...</div>
-    );
+    return <div className="text-yellow-300 text-xl font-mono">Loading...</div>;
   }
 
   return (
@@ -94,10 +88,10 @@ function Dashboard() {
         {/* Header */}
         <div className="mb-6">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/create")}
             className="text-yellow-400 hover:text-yellow-200 mb-4 transition-colors"
           >
-            ← Back to Home
+            ◀ Back
           </button>
           <h1 className="text-4xl font-bold mb-2 text-yellow-300">
             {boardConfig.displayName}
@@ -146,7 +140,7 @@ function Dashboard() {
 
         {/* Board URLs */}
         <div className="grid md:grid-cols-2 gap-6 mb-6">
-          <RetroFrame>
+          <RetroFrame className="flex flex-col justify-between h-full">
             <h3 className="text-yellow-300 font-bold mb-2">
               Public Display Link
             </h3>
@@ -175,7 +169,7 @@ function Dashboard() {
             </button>
           </RetroFrame>
 
-          <RetroFrame>
+          <RetroFrame className="flex flex-col justify-between h-full">
             <h3 className="text-yellow-300 font-bold mb-2">Dashboard Link</h3>
             <p className="text-yellow-500 text-sm mb-4">
               Keep this private for managing your board

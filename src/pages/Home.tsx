@@ -5,8 +5,8 @@ function Home() {
   const navigate = useNavigate();
 
   return (
-    <RetroFrame>
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <RetroFrame>
+    <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="max-w-3xl w-full mx-auto text-center py-8">
           <h1 className="text-5xl font-bold mb-4 text-yellow-400">
             Lightning Zap Board
@@ -56,8 +56,8 @@ function Home() {
             </div>
           </div>
         </div>
-      </div>
-    </RetroFrame>
+    </div>
+      </RetroFrame>
   );
 }
 

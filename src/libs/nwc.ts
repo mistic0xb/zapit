@@ -7,7 +7,6 @@ import type { NWCInfo } from '../types';
  */
 export function parseNWCString(nwcString: string): NWCInfo | null {
     try {
-        console.log(`nwcString: ${nwcString}`)
         // Remove any whitespace
         const cleaned = nwcString.trim();
 
@@ -21,10 +20,6 @@ export function parseNWCString(nwcString: string): NWCInfo | null {
         const pubkey = url.hostname || url.pathname.replace('//', '');
         const relay = url.searchParams.get('relay');
         const secret = url.searchParams.get('secret');
-        console.log(`url: ${url}`)
-        console.log(`pubkey: ${pubkey}`)
-        console.log(`relay: ${relay}`)
-        console.log(`secret: ${secret}`)
 
         if (!pubkey || !relay || !secret) {
             throw new Error('Missing required parameters');
@@ -67,12 +62,10 @@ export async function validateNWC(nwcString: string): Promise<{
 
         // Get wallet info
         const info = await nwc.getInfo();
-        console.log(`info: ${info}`)
 
         // Check if wallet supports required methods
         const requiredMethods = ["getInfo","makeInvoice"];
         const supportedMethods = info.methods || [];
-        console.log(`supportedMethods: ${supportedMethods}`)
         const hasRequired = requiredMethods.every(m =>
             supportedMethods.includes(m)
         );
