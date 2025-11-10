@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  lnzapboard:
+    build: .
+    container_name: lnzapboard
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
