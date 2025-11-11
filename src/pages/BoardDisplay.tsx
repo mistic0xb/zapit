@@ -1,10 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router";
 import { QRCodeSVG } from "qrcode.react";
-import {
-  fetchBoardConfig,
-  subscribeToZapMessages,
-} from "../libs/nostr";
+import { fetchBoardConfig, subscribeToZapMessages } from "../libs/nostr";
 import type { BoardConfig, ZapMessage } from "../types";
 
 function BoardDisplay() {
@@ -84,9 +81,7 @@ function BoardDisplay() {
 
   // Top 3 leaderboard - memoized to prevent re-calculation
   const leaderboard = useMemo(() => {
-    return [...messages]
-      .sort((a, b) => b.zapAmount - a.zapAmount)
-      .slice(0, 3);
+    return [...messages].sort((a, b) => b.zapAmount - a.zapAmount).slice(0, 3);
   }, [messages]);
 
   const formatTimeAgo = (timestamp: number) => {
@@ -229,8 +224,8 @@ function BoardDisplay() {
             </div>
 
             {/* QR Code */}
-            <div className="border-2 border-yellow-500 p-6 bg-black">
-              <div className="bg-black p-4 rounded-lg mb-4 border border-yellow-400">
+            <div className="border-2 border-yellow-500 p-4 bg-black">
+              <div>
                 <a
                   href={`${window.location.origin}/pay/${boardId}`}
                   target="_blank"
@@ -240,17 +235,19 @@ function BoardDisplay() {
                     value={`${window.location.origin}/pay/${boardId}`}
                     size={256}
                     level="M"
-                    className="mx-auto"
-                    style={{ width: "100%", height: "auto" }}
+                    bgColor="#ffffff"
+                    fgColor="#000000"
+                    className="mx-auto border-3 border-white w-full h-full"
                   />
                 </a>
-              </div>
-              <p className="text-center text-yellow-300 font-bold text-lg">
+              <p className="text-center text-yellow-300 font-bold text-lg mt-4">
                 Scan to send a zap
               </p>
               <p className="text-center text-yellow-500 text-sm mt-2">
                 Min: {boardConfig.minZapAmount} sats
               </p>
+
+              </div>
             </div>
 
             {/* Message Count */}
