@@ -168,3 +168,65 @@ export function subscribeToZapMessages(
     console.log('Subscribed to zap receipts for:', recipientPubkey);
     return () => sub.close();
 }
+
+/**
+ * Monitor zap receipts in real-time for payment detection
+ */
+export function monitorZapReceipts(
+    boardId: string,
+    recipientPubkey: string,
+    onNewZap: (message: ZapMessage) => void
+): () => void {
+    const pool = getPool();
+    const seenIds = new Set<string>();
+
+    const filter: Filter = {
+        kinds: [9735],
+        '#p': [recipientPubkey],
+        since: Math.floor(Date.now() / 1000), // Only new zaps from now
+    };
+
+    const sub = pool.subscribeMany(
+        DEFAULT_RELAYS,
+        filter,
+        {
+            onevent(event: Event) {
+                // Deduplicate
+                if (seenIds.has(event.id)) return;
+                seenIds.add(event.id);
+
+                try {
+                    const zapInfo = parseZapReceipt(event);
+                    
+                    if (!zapInfo) {
+                        console.log('Could not parse zap receipt');
+                        return;
+                    }
+
+                    // Filter for this board only
+                    if (zapInfo.boardId !== boardId) {
+                        return;
+                    }
+                    console.log('New zap detected:', zapInfo);
+
+                    const message: ZapMessage = {
+                        id: event.id,
+                        boardId,
+                        content: zapInfo.message,
+                        zapAmount: zapInfo.amount,
+                        sender: zapInfo.sender,
+                        displayName: zapInfo.displayName,
+                        timestamp: event.created_at * 1000,
+                    };
+
+                    onNewZap(message);
+                } catch (error) {
+                    console.error('Failed to process zap receipt:', error);
+                }
+            },
+        }
+    );
+
+    console.log('Monitoring new zap receipts for:', recipientPubkey);
+    return () => sub.close();
+}

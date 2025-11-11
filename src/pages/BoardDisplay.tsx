@@ -72,7 +72,6 @@ function BoardDisplay() {
     };
   }, [boardId, boardConfig]);
 
-  // FIXED: Use useMemo to prevent re-calculation on every render
   // This calculates totalSats from messages array (single source of truth)
   const totalSats = useMemo(() => {
     return messages.reduce((sum, msg) => sum + msg.zapAmount, 0);
@@ -89,20 +88,6 @@ function BoardDisplay() {
       .sort((a, b) => b.zapAmount - a.zapAmount)
       .slice(0, 3);
   }, [messages]);
-
-  // // Calc totalSats
-  // const total = messages.reduce((sum, msg) => sum + msg.zapAmount, 0);
-  // setTotalSats(total);
-
-  // // Sort messages for feed
-  // const sortedMessages = [...messages].sort((a, b) => {
-  //   return b.timestamp - a.timestamp;
-  // });
-
-  // // Top 3 leaderboard
-  // const leaderboard = [...messages]
-  //   .sort((a, b) => b.zapAmount - a.zapAmount)
-  //   .slice(0, 3);
 
   const formatTimeAgo = (timestamp: number) => {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);

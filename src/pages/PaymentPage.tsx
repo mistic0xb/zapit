@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { QRCodeSVG } from "qrcode.react";
-import { fetchBoardConfig } from "../libs/nostr";
+import { fetchBoardConfig, monitorZapReceipts } from "../libs/nostr";
 import { generateInvoice } from "../libs/nip57";
-import type { BoardConfig } from "../types";
+import type { BoardConfig, ZapMessage } from "../types";
 import RetroFrame from "../components/Frame";
-import { FaCopy } from "react-icons/fa";
+import { FaCopy, FaCheckCircle } from "react-icons/fa";
 
 function PaymentPage() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -20,6 +20,7 @@ function PaymentPage() {
   const [processing, setProcessing] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [error, setError] = useState("");
 
   // Preset amount options
@@ -54,7 +55,34 @@ function PaymentPage() {
     loadBoard();
   }, [boardId]);
 
-  // NEW: Get valid preset amounts based on minZapAmount
+  // Monitor for payment success after invoice is generated
+  useEffect(() => {
+    if (!invoice || !boardId || !boardConfig) return;
+
+    console.log("Starting to monitor for payment...");
+
+    // Monitor zap receipts to detect when payment is made
+    const unsubscribe = monitorZapReceipts(
+      boardId,
+      boardConfig.creatorPubkey,
+      (zapMessage: ZapMessage) => {
+        // Check if this zap matches our current invoice details
+        if (zapMessage.content === message && zapMessage.zapAmount === amount) {
+          console.log("Payment detected!", zapMessage);
+          setPaymentSuccess(true);
+
+          // Optional: Navigate to board after a delay
+          setTimeout(() => {
+            navigate(`/board/${boardId}`);
+          }, 3000);
+        }
+      }
+    );
+
+    return () => unsubscribe();
+  }, [invoice, boardId, boardConfig, message, amount, navigate]);
+
+  // Get valid preset amounts based on minZapAmount
   const getValidPresets = () => {
     if (!boardConfig) return [];
     return PRESET_AMOUNTS.filter(
@@ -90,7 +118,7 @@ function PaymentPage() {
         recipientPubkey: boardConfig.creatorPubkey,
         displayName: displayName.trim() || "Anonymous",
       });
-      console.log(invoiceData)
+      console.log(invoiceData);
 
       if (!invoiceData || !invoiceData.invoice) {
         throw new Error("Failed to generate invoice");
@@ -198,12 +226,12 @@ function PaymentPage() {
                           {formatAmount(preset)}
                         </button>
                       ))}
-                    <button
-                      onClick={() => setShowCustomAmount(true)}
-                      className="w-full px-2 py-1 bg-white/10 text-white border border-white/30 hover:bg-white/20 text-sm transition-colors"
-                    >
-                      Custom Amount
-                    </button>
+                      <button
+                        onClick={() => setShowCustomAmount(true)}
+                        className="w-full px-2 py-1 bg-white/10 text-white border border-white/30 hover:bg-white/20 text-sm transition-colors"
+                      >
+                        Custom Amount
+                      </button>
                     </div>
                   </div>
                 ) : (
@@ -270,53 +298,86 @@ function PaymentPage() {
           </div>
         ) : (
           // Step 2: Show invoice
-          <div className="bg-white/10 backdrop-blur-lg  p-8 text-center">
-            <h2 className="text-3xl font-bold text-white mb-2">Scan to Pay</h2>
-            <p className="text-gray-300 mb-6">{amount.toLocaleString()} sats</p>
-            <div className="flex flex-col items-center justify-center pb-3 gap-2">
-              <div className="bg-white p-6">
-                <QRCodeSVG
-                  value={invoice}
-                  size={300}
-                  level="M"
-                  className="mx-auto"
-                  style={{ width: "100%", height: "auto" }}
-                />
-              </div>
-              {!copied ? (
-                <div
-                  className="flex gap-2 items-center text-sm cursor-pointer text-yellow-400 hover:text-yellow-300 transition-colors"
-                  onClick={handleCopy}
+          <div className="bg-white/10 backdrop-blur-lg p-8 text-center">
+            {/* Conditional rendering based on payment success */}
+            {!paymentSuccess ? (
+              // Show QR code while waiting for payment
+              <>
+                <h2 className="text-3xl font-bold text-white mb-2">
+                  Scan to Pay
+                </h2>
+                <p className="text-gray-300 mb-6">
+                  {amount.toLocaleString()} sats
+                </p>
+                <div className="flex flex-col items-center justify-center pb-3 gap-2">
+                  <div className="bg-white p-6">
+                    <QRCodeSVG
+                      value={invoice}
+                      size={300}
+                      level="M"
+                      className="mx-auto"
+                      style={{ width: "100%", height: "auto" }}
+                    />
+                  </div>
+                  {!copied ? (
+                    <div
+                      className="flex gap-2 items-center text-sm cursor-pointer text-yellow-400 hover:text-yellow-300 transition-colors"
+                      onClick={handleCopy}
+                    >
+                      copy invoice addr <FaCopy size={20} />
+                    </div>
+                  ) : (
+                    <div className="text-green-300 text-sm text-center md:text-right">
+                      {copied ? "lnrunl invoice copied!" : ""}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={openInWallet}
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4  text-lg mb-3 transition-colors"
                 >
-                  copy invoice addr <FaCopy size={20} />
+                  Open in Wallet
+                </button>
+
+                <button
+                  onClick={() => {
+                    setInvoice(null);
+                    setMessage("");
+                  }}
+                  className="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-3  transition-colors"
+                >
+                  Create Another Zap
+                </button>
+
+                <p className="text-gray-400 text-sm mt-6">
+                  Waiting for payment...
+                </p>
+              </>
+            ) : (
+              // NEW: Show success animation when payment is detected
+              <div className="flex flex-col items-center justify-center py-12">
+                {/* Animated checkmark with scale and fade-in animation */}
+                <div className="animate-[scale-in_0.5s_ease-out]">
+                  <FaCheckCircle
+                    className="text-green-400 animate-pulse"
+                    size={120}
+                  />
                 </div>
-              ) : (
-                <div className="text-green-300 text-sm text-center md:text-right">
-                  {copied ? "lnrunl invoice copied!" : ""}
-                </div>
-              )}
-            </div>
 
-            <button
-              onClick={openInWallet}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4  text-lg mb-3 transition-colors"
-            >
-              Open in Wallet
-            </button>
+                <h2 className="text-4xl font-bold text-green-400 mt-6 mb-2 animate-[fade-in_0.5s_ease-out_0.3s_both]">
+                  Payment Successful!
+                </h2>
 
-            <button
-              onClick={() => {
-                setInvoice(null);
-                setMessage("");
-              }}
-              className="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-3  transition-colors"
-            >
-              Create Another Zap
-            </button>
+                <p className="text-gray-300 text-lg animate-[fade-in_0.5s_ease-out_0.5s_both]">
+                  Your message has been sent ⚡
+                </p>
 
-            <p className="text-gray-400 text-sm mt-6">
-              After payment, your message will appear on the board
-            </p>
+                <p className="text-gray-400 text-sm mt-4 animate-[fade-in_0.5s_ease-out_0.7s_both]">
+                  Redirecting to board...
+                </p>
+              </div>
+            )}
           </div>
         )}
       </RetroFrame>
