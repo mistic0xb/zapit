@@ -6,6 +6,7 @@ import { BsLightning } from "react-icons/bs";
 function ZapMe() {
   const [showOnChain, setShowOnChain] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [copiedNpub, setCopiedNpub] = useState(false);
 
   const LIGHTNING_ADDRESS = "mist@coinos.io";
   const BITCOIN_ADDRESS = "bc1q6cxtna4zdqh999q06v3dhhafcnk9s6kavw8wut";
@@ -16,9 +17,30 @@ function ZapMe() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const handleNpubCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedNpub(true);
+    setTimeout(() => setCopiedNpub(false), 1500);
+  };
+
+  const NPUB =
+    "npub1kuzk93p4mea2yxehddet03szwx2h4uw3wqz3ehvqrwj9ssd0tetqs5adr6";
+
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="max-w-lg w-full mx-auto">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h1 className="text-4xl font-bold text-yellow-400 mb-4">
+            Support Open Source Tech
+          </h1>
+          <p className="text-white/70 text-lg leading-snug px-10">
+            Your support motivates me to keep building cool, open,
+            freedom-focused technology. Together, we can make peer-to-peer the
+            default.
+          </p>
+        </div>
+
         {/* Main Card */}
         <div className="bg-black border-2 border-yellow-500 p-6 rounded-lg shadow-[0_0_20px_rgba(255,255,0,0.1)]">
           <div className="text-center mb-4">
@@ -28,7 +50,8 @@ function ZapMe() {
             <h2 className="text-xl font-bold text-white mb-1">Bitcoin Only</h2>
             <p className="text-white/70 text-xs leading-snug text-center flex justify-center gap-1">
               <span className="text-white/60">
-                No Stripe, No Paypal, No credit cards, Just peer-to-peer electronic cash
+                No Stripe, No Paypal, No credit cards, Just peer-to-peer
+                electronic cash
               </span>
             </p>
           </div>
@@ -92,6 +115,34 @@ function ZapMe() {
               level="M"
               className="mx-auto"
             />
+          </div>
+
+          {/* Nostr Section */}
+          <div className="border border-yellow-500/30 p-3 rounded-lg mb-6 relative">
+            <h3 className="text-center text-yellow-400 font-bold text-sm uppercase mb-2">
+              Find Me on Nostr
+            </h3>
+
+            <div className="bg-black border border-yellow-500/40 p-3 rounded text-center relative">
+              <code className="text-purple-300 text-sm font-mono break-all">
+                {NPUB}
+              </code>
+
+              {/* Subtle Copy Icon (top-right corner) */}
+              <button
+                onClick={() => handleNpubCopy(NPUB)}
+                className="absolute bottom-2 right-2 text-purple-400 hover:text-purple-300 transition-colors"
+                title="Copy npub"
+              >
+                <FaCopy size={14} />
+              </button>
+            </div>
+
+            {copiedNpub && (
+              <div className="text-center text-xs text-purple-400 mt-1">
+                Copied!
+              </div>
+            )}
           </div>
 
           {/* Why Bitcoin Section */}
