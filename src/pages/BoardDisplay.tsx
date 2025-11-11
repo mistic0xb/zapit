@@ -163,16 +163,16 @@ function BoardDisplay() {
           </div>
         )}
 
+        {/* Left: Messages feed */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left: Messages feed */}
           <div className="lg:col-span-2 max-h-[60vh] overflow-y-auto pr-2 space-y-4 scrollbar-custom">
             {sortedMessages.length === 0 ? (
-              <div className="border-2 border-yellow-500 p-12 text-center bg-black">
-                <div className="text-6xl mb-4">⚡</div>
-                <p className="text-yellow-300 text-xl">
+              <div className="border-2 border-yellow-500 p-8 sm:p-12 text-center bg-black">
+                <div className="text-5xl sm:text-6xl mb-3 sm:mb-4">⚡</div>
+                <p className="text-yellow-300 text-lg sm:text-xl">
                   Waiting for messages...
                 </p>
-                <p className="text-yellow-500 text-sm mt-2">
+                <p className="text-yellow-500 text-xs sm:text-sm mt-2">
                   Scan the QR code to send a zap with your message
                 </p>
               </div>
@@ -180,29 +180,30 @@ function BoardDisplay() {
               sortedMessages.map((msg) => (
                 <div
                   key={msg.id}
-                  className="bg-black border-2 border-yellow-500 p-6 transition-all duration-200"
+                  className="bg-black border-2 border-yellow-500 p-4 sm:p-6 rounded-lg transition-all duration-200"
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center">
-                        <span className="text-black text-xl font-bold">
+                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2 sm:gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-400 rounded-full flex items-center justify-center">
+                        <span className="text-black text-lg sm:text-xl font-bold">
                           {msg.displayName?.[0]?.toUpperCase() || "A"}
                         </span>
                       </div>
-                      <span className="text-yellow-200 font-medium">
+                      <span className="text-yellow-200 font-medium text-sm sm:text-base">
                         {msg.displayName || "Anonymous"}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="bg-yellow-400 text-black font-bold px-4 py-1 rounded-full">
+
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <span className="bg-yellow-400 text-black font-bold px-3 py-0.5 sm:px-4 sm:py-1 rounded-full text-sm sm:text-base">
                         {msg.zapAmount.toLocaleString()} sats
                       </span>
-                      <span className="text-yellow-500 text-sm">
+                      <span className="text-yellow-500 text-xs sm:text-sm">
                         {formatTimeAgo(msg.timestamp)}
                       </span>
                     </div>
                   </div>
-                  <p className="text-yellow-100 text-lg leading-relaxed">
+                  <p className="text-yellow-100 text-base sm:text-lg leading-relaxed wrap-break-word">
                     {msg.content}
                   </p>
                 </div>
@@ -240,13 +241,12 @@ function BoardDisplay() {
                     className="mx-auto border-3 border-white w-full h-full"
                   />
                 </a>
-              <p className="text-center text-yellow-300 font-bold text-lg mt-4">
-                Scan to send a zap
-              </p>
-              <p className="text-center text-yellow-500 text-sm mt-2">
-                Min: {boardConfig.minZapAmount} sats
-              </p>
-
+                <p className="text-center text-yellow-300 font-bold text-lg mt-4">
+                  Scan to send a zap
+                </p>
+                <p className="text-center text-yellow-500 text-sm mt-2">
+                  Min: {boardConfig.minZapAmount} sats
+                </p>
               </div>
             </div>
 
