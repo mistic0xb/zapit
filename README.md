@@ -1,73 +1,77 @@
-# React + TypeScript + Vite
+<p align="center">
+  <img src="./public/lnzapboard-logo.png" alt="LN ZapBoard" width="100"/>
+</p>
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<h1 align="center">⚡ LN ZapBoard</h1>
 
-Currently, two official plugins are available:
+<p align="center">
+  Transform your Lightning payments into interactive message boards — built for freedom, powered by Bitcoin.
+</p>
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## What is LN ZapBoard?
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**LN ZapBoard** transforms **Lightning Network payments** into **interactive message boards**.  
+Users send Bitcoin zaps with messages that appear live on the board — perfect for **Q&A sessions**, **live events**, **community feedback**, or any setup where you want to **monetize engagement**.
 
-## Expanding the ESLint configuration
+## Key Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+-  **Lightning-Powered Messages** — Send sats to post messages  
+-  **Real-time Leaderboards** — Top zappers get highlighted  
+-  **QR Code Integration** — Instant payment scanning  
+-  **Decentralized** — Built on the Nostr protocol  
+-  **Persistent Storage** — Messages stored on Nostr relays  
+-  **Live Stats** — Track total sats and message count  
+-  **Payment Verification** — Auto-detect successful zaps  
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 📖 How It Works
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### 1. Create a Board
+- Set your board name and Lightning address  
+- Configure minimum zap amount  
+- Connect your Nostr Wallet Connect (NWC) string  
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Share Your Board
+- Get a unique QR code for your board  
+- Share the link with your audience  
+- Display it at events, streams, or presentations  
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 3. Receive Zaps
+- Users scan the QR code  
+- They send sats with their message  
+- Messages appear instantly on the board  
+- Top zappers climb the leaderboard  
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+##  Usage Examples
+
+### 🎤 Event Q&A  
+Host a conference panel where attendees zap to ask questions.  
+Higher zaps get priority on the leaderboard.
+
+### 📺 Live Streaming  
+Accept viewer messages via zaps during your stream.  
+Thank top supporters in real time.
+
+### 💬 Community Feedback  
+Collect feature requests where users “vote” with sats.  
+Most-zapped ideas rise to the top.
+
+### 💰 Tipping Board  
+Create a public board for your content.  
+Fans send appreciation messages with tips.
+
+
+## Support Open Source Tech
+
+Your support motivates me to keep building **freedom tech** — open, decentralized, censorship-resistant tools for everyone.  
+
+Let’s keep the Lightning spirit alive ⚡
+
+---
+<p align="center">
+  Made with ⚡ by <a href="https://lnzapboard.mistic.xyz/zapme" target="_blank">mist</a> for freedom.
+</p>
+
+

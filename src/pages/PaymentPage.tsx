@@ -355,7 +355,7 @@ function PaymentPage() {
                 </p>
               </>
             ) : (
-              // NEW: Show success animation when payment is detected
+              // Show success animation when payment is detected
               <div className="flex flex-col items-center justify-center py-12">
                 {/* Animated checkmark with scale and fade-in animation */}
                 <div className="animate-[scale-in_0.5s_ease-out]">
