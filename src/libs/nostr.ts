@@ -1,4 +1,4 @@
-import { SimplePool, finalizeEvent, generateSecretKey } from 'nostr-tools';
+import { SimplePool, finalizeEvent } from 'nostr-tools';
 import type { Event, Filter } from 'nostr-tools';
 import type { BoardConfig, ZapMessage } from '../types';
 import { parseZapReceipt } from './nip57';
