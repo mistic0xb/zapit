@@ -1,15 +1,27 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router";
 import { QRCodeSVG } from "qrcode.react";
 import { fetchBoardConfig, subscribeToZapMessages } from "../libs/nostr";
 import type { BoardConfig, ZapMessage } from "../types";
+
+import generalMsgSfx from "../assets/sounds/general-msg.wav";
+import top1Sfx from "../assets/sounds/top1.wav";
+import top2Sfx from "../assets/sounds/top2.wav";
+import top3Sfx from "../assets/sounds/top3.wav";
+import { FaVolumeMute, FaVolumeUp } from "react-icons/fa";
 
 function BoardDisplay() {
   const { boardId } = useParams<{ boardId: string }>();
   const [boardConfig, setBoardConfig] = useState<BoardConfig | null>(null);
   const [messages, setMessages] = useState<ZapMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [prevLeaders, setPrevLeaders] = useState<string[]>([]);
   const [error, setError] = useState("");
+
+  const [volume, setVolume] = useState(0.2);
+  const [isMuted, setIsMuted] = useState(false);
+  const isLeaderboardSoundPlayingRef = useRef(false);
+  const [highlightedRows, setHighlightedRows] = useState<string[]>([]);
 
   // Load board config from Nostr or localStorage
   useEffect(() => {
@@ -57,6 +69,12 @@ function BoardDisplay() {
             console.log("Duplicate message ignored:", message.id);
             return prev;
           }
+          // Play general sound ONLY if leaderboard sound not active
+          if (!isMuted && !isLeaderboardSoundPlayingRef.current) {
+            const audio = new Audio(generalMsgSfx);
+            audio.volume = volume;
+            audio.play().catch(() => {});
+          }
           console.log("Adding new message to state");
           return [...prev, message];
         });
@@ -84,6 +102,40 @@ function BoardDisplay() {
     return [...messages].sort((a, b) => b.zapAmount - a.zapAmount).slice(0, 3);
   }, [messages]);
 
+  // Detect leaderboard changes & play sounds with priority
+  useEffect(() => {
+    leaderboard.forEach((msg, idx) => {
+      if (!prevLeaders.includes(msg.id)) {
+        // highlight for 2 seconds
+        setHighlightedRows((prev) => [...prev, msg.id]);
+        setTimeout(() => {
+          setHighlightedRows((prev) => prev.filter((id) => id !== msg.id));
+        }, 2000);
+
+        // sound effect
+        const sound =
+          idx === 0
+            ? top1Sfx
+            : idx === 1
+            ? top2Sfx
+            : idx === 2
+            ? top3Sfx
+            : null;
+        if (sound && !isMuted) {
+          const audio = new Audio(sound);
+          audio.volume = volume;
+          audio.play().catch(() => {});
+          // Mark leaderboard sound as active
+          isLeaderboardSoundPlayingRef.current = true;
+          setTimeout(() => {
+            isLeaderboardSoundPlayingRef.current = false;
+          }, 1500); // same as sound duration
+        }
+      }
+    });
+    setPrevLeaders(leaderboard.map((m) => m.id));
+  }, [leaderboard, isMuted, volume]);
+
   const formatTimeAgo = (timestamp: number) => {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
     if (seconds < 60) return "Now";
@@ -91,12 +143,6 @@ function BoardDisplay() {
     if (seconds < 86400) return `${Math.floor(seconds / 3600)} hr ago`;
     return `${Math.floor(seconds / 86400)} days ago`;
   };
-
-  // const satsToUSD = (sats: number) => {
-  //   const btcPrice = 100_000;
-  //   const btc = sats / 100_000_000;
-  //   return (btc * btcPrice).toFixed(8);
-  // };
 
   if (loading) {
     return (
@@ -117,6 +163,24 @@ function BoardDisplay() {
   return (
     <div className="min-h-screen bg-black p-8 flex flex-col items-center">
       <div className="w-full max-w-7xl">
+        {/* Volume controls */}
+        <div className="absolute top-3 right-3 flex items-center gap-2 p-2">
+          <button
+            onClick={() => setIsMuted(!isMuted)}
+            className="text-yellow-400 hover:text-yellow-200 transition-colors"
+          >
+            {isMuted ? <FaVolumeMute size={22} /> : <FaVolumeUp size={22} />}
+          </button>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={volume}
+            onChange={(e) => setVolume(parseFloat(e.target.value))}
+            className="w-24 accent-yellow-400"
+          />
+        </div>
         {/* Header */}
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-yellow-400 uppercase">
@@ -143,12 +207,28 @@ function BoardDisplay() {
                 {leaderboard.map((msg, idx) => {
                   // Determine background color based on rank
                   let bgClass = "bg-yellow-800"; // default
+                  const pulseColor =
+                    idx === 0
+                      ? "bg-orange-500"
+                      : idx === 1
+                      ? "bg-orange-300"
+                      : "bg-orange-100";
+
                   if (idx === 0) bgClass = "bg-yellow-500 text-black"; // top 1
                   else if (idx === 1)
                     bgClass = "bg-yellow-200 text-black"; // top 2
                   else if (idx === 2) bgClass = "bg-yellow-100 text-black"; // top 3
                   return (
-                    <tr key={msg.id} className="border-t border-yellow-500 ">
+                    <tr
+                      key={msg.id}
+                      className={`
+                        border-t border-yellow-500 transition-all duration-500
+                            ${
+                              highlightedRows.includes(msg.id)
+                                ? `${pulseColor} animate-pulse text-black`
+                                : ""
+                            }`}
+                    >
                       <td className="py-1">{idx + 1}</td>
                       <td>{msg.displayName || "Anon"}</td>
                       <td>{msg.content}</td>
