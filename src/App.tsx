@@ -7,6 +7,7 @@ import PaymentPage from "./pages/PaymentPage";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import ZapMe from "./pages/ZapMe";
+import ExplorePage from "./pages/ExplorePage";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/create" element={<CreateBoard />} />
+              <Route path="/explore" element={<ExplorePage />} />
               <Route path="/dashboard/:boardId" element={<Dashboard />} />
               <Route path="/board/:boardId" element={<BoardDisplay />} />
               <Route path="/pay/:boardId" element={<PaymentPage />} />
