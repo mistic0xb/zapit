@@ -185,7 +185,7 @@ function PaymentPage() {
               ⚡ Send a Zap
             </h2>
             <p className="text-gray-300 mb-6 text-sm sm:text-base">
-              to {boardConfig?.displayName}
+              to {boardConfig?.boardName}
             </p>
 
             <div className="space-y-6">

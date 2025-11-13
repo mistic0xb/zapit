@@ -32,13 +32,13 @@ export async function publishBoardConfig(
         created_at: Math.floor(Date.now() / 1000),
         tags: [
             ['d', config.boardId],
-            ['title', config.displayName],
+            ['title', config.boardName],
             ['ln', config.lightningAddress],
             ['min_zap', config.minZapAmount.toString()],
             ['t', 'zapboard']
         ],
         content: JSON.stringify({
-            displayName: config.displayName,
+            boardName: config.boardName,
             minZapAmount: config.minZapAmount,
             lightningAddress: config.lightningAddress,
             createdAt: config.createdAt,
@@ -84,13 +84,13 @@ export async function fetchBoardConfig(
                     if (sub) sub.close();
 
                     try {
-                        const content = JSON.parse(event.content);
+                        const content = JSON.parse(event.content) as BoardConfig;
                         const lnTag = event.tags.find(t => t[0] === 'ln');
                         const minZapTag = event.tags.find(t => t[0] === 'min_zap');
 
                         const config: BoardConfig = {
                             boardId,
-                            displayName: content.displayName,
+                            boardName: content.boardName,
                             minZapAmount: parseInt(minZapTag?.[1] || '1000'),
                             lightningAddress: lnTag?.[1] || '',
                             creatorPubkey: event.pubkey,
@@ -139,7 +139,7 @@ export async function fetchAllBoards(): Promise<BoardConfig[]> {
                 seen.add(event.id);
 
                 try {
-                    const content = JSON.parse(event.content);
+                    const content = JSON.parse(event.content) as BoardConfig;
                     const boardIdTag = event.tags.find(t => t[0] === 'd');
                     const lnTag = event.tags.find(t => t[0] === 'ln');
                     const minZapTag = event.tags.find(t => t[0] === 'min_zap');
@@ -149,7 +149,7 @@ export async function fetchAllBoards(): Promise<BoardConfig[]> {
 
                     const config: BoardConfig = {
                         boardId,
-                        displayName: content.displayName,
+                        boardName: content.boardName,
                         minZapAmount: parseInt(minZapTag?.[1] || '1000'),
                         lightningAddress: lnTag?.[1] || '',
                         creatorPubkey: event.pubkey,

@@ -184,7 +184,7 @@ function BoardDisplay() {
         {/* Header */}
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-yellow-400 uppercase">
-            {boardConfig.displayName}
+            {boardConfig.boardName}
           </h1>
         </div>
 

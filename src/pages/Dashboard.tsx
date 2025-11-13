@@ -95,7 +95,7 @@ function Dashboard() {
             ◀ Back
           </button>
           <h1 className="text-4xl font-bold mb-2 text-yellow-300">
-            {boardConfig.displayName}
+            {boardConfig.boardName}
           </h1>
           <p className="text-yellow-500">
             Created {new Date(boardConfig.createdAt).toLocaleDateString()}

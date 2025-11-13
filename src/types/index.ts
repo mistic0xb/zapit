@@ -1,6 +1,6 @@
 export interface BoardConfig {
   boardId: string;
-  displayName: string;
+  boardName: string;
   minZapAmount: number;
   lightningAddress: string;
   creatorPubkey: string;

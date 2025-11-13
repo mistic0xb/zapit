@@ -17,7 +17,7 @@ function CreateBoard() {
   const [step, setStep] = useState<"info" | "usePrevious" | "nwc">("info");
 
   // Board settings
-  const [displayName, setDisplayName] = useState("");
+  const [boardName, setBoardName] = useState("");
   const [minZapAmount, setMinZapAmount] = useState(1000);
 
   // NWC string + password
@@ -39,7 +39,7 @@ function CreateBoard() {
   }, []);
 
   const handleNext = async () => {
-    if (!displayName.trim()) setError("Please enter a board name");
+    if (!boardName.trim()) setError("Please enter a board name");
 
     setError("");
     setIsValidating(false);
@@ -87,7 +87,7 @@ function CreateBoard() {
       // Step 4: Create board config
       const boardConfig: BoardConfig = {
         boardId,
-        displayName,
+        boardName,
         minZapAmount,
         lightningAddress,
         creatorPubkey: publicKey,
@@ -147,7 +147,7 @@ function CreateBoard() {
                     "bg-yellow-400 hover:bg-yellow-500 text-black border-yellow-300"
               }`}
             >
-              <span>{board.config.displayName}</span>
+              <span>{board.config.boardName}</span>
               {/*  Show arrow if selected */}
               {isSelected && <span className="text-black text-lg">◀</span>}
             </button>
@@ -187,7 +187,7 @@ function CreateBoard() {
           <button
             onClick={() => {
               const confirmDelete = confirm(
-                `Are you sure you want to delete "${selectedBoard.config.displayName}"?`
+                `Are you sure you want to delete "${selectedBoard.config.boardName}"?`
               );
               if (!confirmDelete) return;
 
@@ -235,8 +235,8 @@ function CreateBoard() {
                   </label>
                   <input
                     type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
+                    value={boardName}
+                    onChange={(e) => setBoardName(e.target.value)}
                     placeholder="Bitcoin Conference Q&A"
                     className="w-full px-4 py-3 bg-black text-white placeholder-gray-400 border-2 border-yellow-400 focus:outline-none focus:border-brightGreen"
                   />

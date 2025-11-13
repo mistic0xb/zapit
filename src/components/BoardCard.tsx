@@ -38,7 +38,7 @@ export default function BoardCard({ board, onClick }: BoardCardProps) {
     >
       <div>
         <h2 className="text-xl font-bold text-yellow-400">
-          {board.displayName}
+          {board.boardName}
         </h2>
         <p className="text-sm font-bold text-yellow-400/60 wrap-break-word">
           {board.boardId.slice(0, 16)}
