@@ -92,7 +92,7 @@ function NostrLoginOverlay({ onSuccess, onClose }: NostrLoginOverlayProps) {
             <div className="animate-[scale-in_0.5s_ease-out]">
               <FaCheckCircle className="text-green-400 animate-pulse" size={100} />
             </div>
-            <h2 className="text-3xl font-bold text-green-400 mt-6 mb-2 animate-[fade-in_0.5s_ease-out_0.3s_both]">
+            <h2 className="text-3xl font-bold text-green-400 mt-6 mb-2 animate-[fade-in_0.5s_ease-out_0.3s_both] text-center">
               Connected Successfully!
             </h2>
             <p className="text-gray-300 text-base animate-[fade-in_0.5s_ease-out_0.5s_both]">

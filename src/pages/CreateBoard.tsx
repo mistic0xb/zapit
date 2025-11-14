@@ -408,8 +408,8 @@ function CreateBoard() {
                   </button>
                   <button
                     onClick={handleCreateBoard}
-                    disabled={isValidating}
-                    className="flex-1 bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-600 text-black font-bold py-3 uppercase border-2 border-yellow-300 transition-all duration-200"
+                    disabled={isValidating || !isCreateButtonEnabled()}
+                    className="flex-1 bg-yellow-400 hover:bg-yellow-500 disabled:bg-yellow-400/20 disabled:border-yellow-500/50 disabled:cursor-not-allowed text-black font-bold py-3 uppercase border-2 border-yellow-300 transition-all duration-200"
                   >
                     {isValidating ? "Creating..." : "Create Board"}
                   </button>
