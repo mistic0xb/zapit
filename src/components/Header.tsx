@@ -6,7 +6,7 @@ export default function Header() {
 
   return (
     <header className="bg-black border-b-2 border-yellow-500/50 p-4">
-      <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <div className="w-full mx-auto flex items-center justify-between px-8">
         <div
           onClick={() => navigate("/")}
           className="flex items-center gap-3 cursor-pointer group"
@@ -16,8 +16,8 @@ export default function Header() {
             alt="lnzapboard logo"
             className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-200"
           />
-          <span className="text-yellow-400 font-bold text-2xl tracking-wide group-hover:text-yellow-300 transition-colors">
-           LN ZapBoard
+          <span className="text-yellow-400 font-bold text-2xl tracking-wide group-hover:text-yellow-300 transition-colors flex justify-end items-baseline">
+            zapit<span className="text-white/70 text-sm">.space</span>
           </span>
         </div>
 
