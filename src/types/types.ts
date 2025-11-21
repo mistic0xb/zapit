@@ -4,6 +4,7 @@ export interface BoardConfig {
   minZapAmount: number;
   lightningAddress: string;
   creatorPubkey: string;
+  isExplorable?: boolean;
   createdAt: number;
 }
 
@@ -25,7 +26,6 @@ export interface NWCInfo {
 
 export interface StoredBoard {
   boardId: string;
-  encryptedNwcString: string,
   config: BoardConfig;
   createdAt: number;
 }

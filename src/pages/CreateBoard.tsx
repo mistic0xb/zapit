@@ -1,31 +1,25 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { validateLightningAddress } from "../libs/lighting";
-import {
-  decryptNwc,
-  encryptNwc,
-  generateBoardId,
-  generateEphemeralKeys,
-} from "../libs/crypto";
+import { generateBoardId, generateEphemeralKeys } from "../libs/crypto";
 import type { BoardConfig, StoredBoard } from "../types/types";
-import { validateNWC } from "../libs/nwc";
 import { publishBoardConfig, verifyUserEligibility } from "../libs/nostr";
+import { generatePremiumInvoice, monitorPremiumPayment,
+} from "../libs/payments";
 import RetroFrame from "../components/Frame";
 import NostrLoginOverlay from "../components/NostrLoginOverlay";
+import { PREMIUM_AMOUNT, PREMIUM_LIGHTNING_ADDRESS } from "../libs/payments";
+import { QRCodeSVG } from "qrcode.react";
 
 function CreateBoard() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<"info" | "usePrevious" | "nwc">("info");
 
   // Board settings
   const [boardName, setBoardName] = useState("");
+  const [lightningAddress, setLightningAddress] = useState("");
   const [minZapAmount, setMinZapAmount] = useState(1000);
-
-  // NWC string + password
-  const [nwcString, setNwcString] = useState("");
-  const [password, setPassword] = useState("");
-  const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
   // Explorable board state
   const [isExplorable, setIsExplorable] = useState(false);
@@ -33,15 +27,24 @@ function CreateBoard() {
   const [userPubkey, setUserPubkey] = useState<string>("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Add eligibility verification states
+  // Eligibility verification states
   const [isVerifyingEligibility, setIsVerifyingEligibility] = useState(false);
   const [isEligible, setIsEligible] = useState(false);
   const [eligibilityError, setEligibilityError] = useState("");
 
+  // Payment states
+  const [showPaymentQR, setShowPaymentQR] = useState(false);
+  const [premiumInvoice, setPremiumInvoice] = useState("");
+  const [isWaitingPayment, setIsWaitingPayment] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
+
   // Load existing boards from localStorage
   const [prevBoards, setPrevBoards] = useState<StoredBoard[]>([]);
+  const [showPrevBoards, setShowPrevBoards] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<StoredBoard>();
-  const [selectedBoardPassword, setSelectedBoardPassword] = useState("");
+
+  // Generate board ID
+  const boardId = generateBoardId();
 
   useEffect(() => {
     const boards: StoredBoard[] = JSON.parse(
@@ -58,6 +61,8 @@ function CreateBoard() {
       setIsExplorable(false);
       setIsLoggedIn(false);
       setUserPubkey("");
+      setIsPaid(false);
+      setShowPaymentQR(false);
     }
   };
 
@@ -77,81 +82,89 @@ function CreateBoard() {
 
       if (result.eligible) {
         setIsEligible(true);
+        // Show payment QR
+        showPaymentModal(boardId, pubkey);
       } else {
         setIsEligible(false);
+        setIsExplorable(false);
         setEligibilityError(
           result.reason || "Not eligible to create explorable board"
         );
       }
     } catch (err) {
       setIsEligible(false);
+      setIsExplorable(false);
       setEligibilityError("Failed to verify eligibility. Please try again.");
     } finally {
       setIsVerifyingEligibility(false);
     }
   };
 
+  // Show payment modal
+  const showPaymentModal = async (boardId: string, pubkey: string) => {
+    const res = await generatePremiumInvoice(boardId, pubkey);
+    setPremiumInvoice(res!.invoice);
+    setShowPaymentQR(true);
+    setIsWaitingPayment(true);
+
+    // Monitor for payment
+    const cleanup = monitorPremiumPayment(
+      boardId,
+      pubkey,
+      () => {
+        setIsPaid(true);
+        setIsWaitingPayment(false);
+        setShowPaymentQR(false);
+      },
+      (error) => {
+        setError(error);
+        setIsWaitingPayment(false);
+      }
+    );
+
+    // Store cleanup function for unmount
+    return cleanup;
+  };
+
   // Handle login modal close
   const handleLoginClose = () => {
     setShowLoginOverlay(false);
-    // Reset toggle if they cancelled login
     if (!isLoggedIn) {
       setIsExplorable(false);
     }
     setEligibilityError("");
   };
 
-  const handleNext = async () => {
-    if (!boardName.trim()) setError("Please enter a board name");
-
-    setError("");
-    setIsValidating(false);
-
-    setIsValidating(false);
-    setStep("nwc");
-  };
-
   const handleCreateBoard = async () => {
-    if (!nwcString.trim()) {
-      setError("Please paste your NWC connection string");
+    // Validation
+    if (!boardName.trim()) {
+      setError("Please enter a board name");
       return;
     }
 
-    if (!password.trim()) {
-      setError("Please set a password");
+    if (!lightningAddress.trim()) {
+      setError("Please enter a Lightning address");
       return;
     }
 
-    if (isExplorable && !isLoggedIn) {
-      setError("Please sign in with extension to make board explorable");
+    if (isExplorable && !isPaid) {
+      setError("Please complete payment to create explorable board");
       return;
     }
 
-    setIsValidating(true);
+    setIsCreating(true);
     setError("");
 
     try {
-      // Step 1: Validate NWC
-      const nwcValidation = await validateNWC(nwcString);
-      if (!nwcValidation.valid) {
-        throw new Error(nwcValidation.error || "Invalid NWC connection");
-      }
-
-      // Step : Extract lub16 from nwc
-      const lightningAddress =
-        new URL(
-          nwcString.replace("nostr+walletconnect://", "https://")
-        ).searchParams.get("lud16") || "";
-
+      // Validate Lightning address
       const validation = await validateLightningAddress(lightningAddress);
-
       if (!validation.valid) {
         setError(validation.error || "Invalid Lightning address");
-        setIsValidating(false);
+        setIsCreating(false);
         return;
       }
 
-      // Step 2: Handle Keys
+      // Handle Keys
       let privateKey: Uint8Array | null = null;
       let publicKey: string;
 
@@ -164,10 +177,7 @@ function CreateBoard() {
         publicKey = keys.publicKey;
       }
 
-      // Step 3: Generate board ID
-      const boardId = generateBoardId();
-
-      // Step 4: Create board config
+      // Create board config
       const boardConfig: BoardConfig = {
         boardId,
         boardName,
@@ -175,300 +185,310 @@ function CreateBoard() {
         lightningAddress,
         creatorPubkey: publicKey,
         createdAt: Date.now(),
+        isExplorable: isExplorable && isPaid,
       };
 
-      // Step 5: Publish to Nostr
-      await publishBoardConfig(boardConfig, privateKey, isExplorable);
+      // Publish to Nostr
+      await publishBoardConfig(boardConfig, privateKey, isExplorable && isPaid);
 
-      // Encrypt NWC string with password
-      const encryptedNWC = encryptNwc(nwcString, password);
-
-      // Step 6: Store in localStorage
+      // Store in localStorage
       const boards: StoredBoard[] = JSON.parse(
         localStorage.getItem("boards") || "[]"
       );
       boards.push({
         boardId,
         config: boardConfig,
-        encryptedNwcString: encryptedNWC,
         createdAt: Date.now(),
       });
       localStorage.setItem("boards", JSON.stringify(boards));
 
-      // Step 6: Navigate to dashboard
-      // We'll pass the NWC string via URL state (not stored)
-      navigate(`/dashboard/${boardId}`, {
-        state: { nwcString },
-      });
+      // Navigate to BoardDisplay
+      navigate(`/board/${boardId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create board");
     } finally {
-      setIsValidating(false);
+      setIsCreating(false);
     }
   };
 
   // Check if create button should be enabled
   const isCreateButtonEnabled = () => {
-    const hasBasicInfo = nwcString.trim() && password.trim();
+    const hasBasicInfo = boardName.trim() && lightningAddress.trim();
     if (!isExplorable) {
       return hasBasicInfo;
     }
-    // If explorable, also need to be logged in
-    return hasBasicInfo && isLoggedIn && !isVerifyingEligibility && isEligible;
+    // If explorable, also need payment completed
+    return hasBasicInfo && isLoggedIn && isEligible && isPaid;
   };
 
-  const renderUsePreviousStep = () => (
-    <div className="space-y-4">
-      <h2 className="text-yellow-300 font-bold mb-2">Select a Board</h2>
+  const renderPreviousBoardsModal = () => (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-black border-4 border-yellow-400 p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
+        <h2 className="text-yellow-300 font-bold text-xl mb-4">
+          Select a Previous Board
+        </h2>
 
-      {prevBoards.map((board) => {
-        const isSelected = selectedBoard?.boardId === board.boardId;
-        return (
-          <div key={board.boardId} className="space-y-2">
+        <div className="space-y-3 mb-4">
+          {prevBoards.map((board) => {
+            const isSelected = selectedBoard?.boardId === board.boardId;
+            return (
+              <button
+                key={board.boardId}
+                onClick={() => setSelectedBoard(board)}
+                className={`w-full text-left font-bold py-3 px-4 uppercase border-2 transition-all duration-200 ${
+                  isSelected
+                    ? "bg-yellow-400 text-black border-yellow-300"
+                    : "bg-black text-yellow-300 border-yellow-400 hover:bg-yellow-500 hover:text-black"
+                }`}
+              >
+                {board.config.boardName}
+              </button>
+            );
+          })}
+        </div>
+
+        {selectedBoard && (
+          <div className="space-y-3">
+            <button
+              onClick={() => navigate(`/board/${selectedBoard.boardId}`)}
+              className="w-full bg-green-400 hover:bg-green-500 text-black font-bold py-3 uppercase border-2 border-green-300 transition-all duration-200"
+            >
+              Open Board
+            </button>
+
             <button
               onClick={() => {
-                setSelectedBoard(board);
-                setSelectedBoardPassword("");
-                setError("");
+                const confirmDelete = confirm(
+                  `Delete "${selectedBoard.config.boardName}"?`
+                );
+                if (!confirmDelete) return;
+
+                const updatedBoards = prevBoards.filter(
+                  (b) => b.boardId !== selectedBoard.boardId
+                );
+                localStorage.setItem("boards", JSON.stringify(updatedBoards));
+                setPrevBoards(updatedBoards);
+                setSelectedBoard(undefined);
               }}
-              // highlight and show-arrow
-              className={`w-full flex justify-between items-center font-bold py-2 px-3 uppercase border-2 transition-all duration-200 ${
-                isSelected
-                  ? "bg-yellow-100 text-black border-yellow-300"
-                  : "bg-yellow-400 hover:bg-yellow-500 text-black border-yellow-300"
-              }`}
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 uppercase border-2 border-red-400 transition-all duration-200"
             >
-              <span>{board.config.boardName}</span>
-              {/*  Show arrow if selected */}
-              {isSelected && <span className="text-black text-lg">◀</span>}
+              Delete Board
             </button>
           </div>
-        );
-      })}
+        )}
 
-      {selectedBoard && (
-        <form onSubmit={(e) => e.preventDefault()} className="space-y-2 mt-4">
-          <input
-            type="text"
-            value={selectedBoardPassword}
-            onChange={(e) => setSelectedBoardPassword(e.target.value)}
-            placeholder="Enter password for this board"
-            className="w-full px-4 py-3 bg-black border-2 border-yellow-400 text-white placeholder-yellow-700 focus:outline-none focus:border-brightGreen"
-          />
-          <button
-            onClick={() => {
-              try {
-                const decryptedNWC = decryptNwc(
-                  selectedBoard.encryptedNwcString,
-                  selectedBoardPassword
-                );
-                navigate(`/dashboard/${selectedBoard.boardId}`, {
-                  state: { nwcString: decryptedNWC },
-                });
-              } catch {
-                setError("Incorrect password or failed to decrypt NWC");
-              }
-            }}
-            className="w-full bg-green-400 hover:bg-green-600 text-black font-bold py-2 uppercase border-2 border-green-300 transition-all duration-200"
-          >
-            Use Board
-          </button>
-
-          {/* Delete button */}
-          <button
-            onClick={() => {
-              const confirmDelete = confirm(
-                `Are you sure you want to delete "${selectedBoard.config.boardName}"?`
-              );
-              if (!confirmDelete) return;
-
-              const updatedBoards = prevBoards.filter(
-                (b) => b.boardId !== selectedBoard.boardId
-              );
-              localStorage.setItem("boards", JSON.stringify(updatedBoards));
-              setPrevBoards(updatedBoards);
-              setSelectedBoard(undefined);
-              setError("");
-            }}
-            className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 uppercase border-2 border-red-400 transition-all duration-200"
-          >
-            Delete Board
-          </button>
-        </form>
-      )}
-
-      <button
-        onClick={() => setStep("info")}
-        className="w-full bg-black border-2 border-yellow-400 text-yellow-300 font-bold py-3 uppercase hover:bg-gray-500 hover:text-white transition-all duration-200"
-      >
-        Back
-      </button>
-
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+        <button
+          onClick={() => {
+            setShowPrevBoards(false);
+            setSelectedBoard(undefined);
+          }}
+          className="w-full mt-4 bg-black border-2 border-yellow-400 text-yellow-300 font-bold py-3 uppercase hover:bg-gray-800 transition-all duration-200"
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   );
+
+  const renderPaymentQR = () => {
+    return (
+      <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+        <div className="bg-black border-4 border-yellow-400 p-6 max-w-md w-full">
+          <h2 className="text-yellow-300 font-bold text-xl mb-4">
+            Premium Board Payment
+          </h2>
+          <p className="text-white mb-4">
+            Zap{" "}
+            <span className="text-yellow-300 font-bold">{PREMIUM_AMOUNT}</span>{" "}
+            to{" "}
+            <span className="text-green-400 font-mono">
+              {PREMIUM_LIGHTNING_ADDRESS}
+            </span>
+          </p>
+
+          <div className="bg-white p-4 mb-4">
+            <QRCodeSVG
+              value={premiumInvoice}
+              size={220}
+              level="M"
+              className="mx-auto"
+              style={{ width: "100%", height: "auto" }}
+            />
+          </div>
+
+          <div className="mb-4 p-3 bg-gray-900 border border-yellow-400 rounded break-all text-xs text-white font-mono">
+            {premiumInvoice}
+          </div>
+
+          {isWaitingPayment && (
+            <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-400 rounded">
+              <p className="text-yellow-300 text-center animate-pulse">
+                ⚡ Waiting for payment confirmation...
+              </p>
+            </div>
+          )}
+
+          {isPaid && (
+            <div className="mb-4 p-3 bg-green-900/30 border border-green-400 rounded">
+              <p className="text-green-400 text-center font-bold">
+                ✓ Payment Confirmed!
+              </p>
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              setShowPaymentQR(false);
+              setIsExplorable(false);
+              setIsLoggedIn(false);
+              setIsPaid(false);
+            }}
+            className="w-full bg-black border-2 border-yellow-400 text-yellow-300 font-bold py-3 uppercase hover:bg-gray-800 transition-all duration-200"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-black p-8 flex items-center justify-center">
       <div className="w-full h-full max-w-5xl mx-auto">
         <RetroFrame className="h-full">
           <div className="max-w-lg w-full mx-auto p-8">
-            {(step === "info" || step === "nwc") && (
-              <h2 className="text-3xl font-bold text-yellow-400 mb-6 uppercase">
-                Create Your Board
-              </h2>
-            )}
-            {step === "info" && (
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-yellow-300 mb-2">
-                    Board Name
-                  </label>
-                  <input
-                    type="text"
-                    value={boardName}
-                    onChange={(e) => setBoardName(e.target.value)}
-                    placeholder="Bitcoin Conference Q&A"
-                    className="w-full px-4 py-3 bg-black text-white placeholder-gray-400 border-2 border-yellow-400 focus:outline-none focus:border-brightGreen"
-                  />
-                </div>
+            <h2 className="text-3xl font-bold text-yellow-400 mb-6 uppercase">
+              Create Your Board
+            </h2>
 
-                <div>
-                  <label className="block text-yellow-300 mb-2">
-                    Minimum Zap Amount (sats)
-                  </label>
-                  <input
-                    type="number"
-                    value={minZapAmount}
-                    onChange={(e) => setMinZapAmount(Number(e.target.value))}
-                    className="w-full px-4 py-3 bg-black text-white border-2 border-yellow-400 focus:outline-none focus:border-brightGreen"
-                  />
-                </div>
-
-                {error && <p className="text-red-400 text-sm">{error}</p>}
-
-                <button
-                  onClick={handleNext}
-                  className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 uppercase border-2 border-yellow-300 transition-all duration-200"
-                >
-                  Next
-                </button>
-
-                {/* ==== User Previous Boards Button ==== */}
-                {prevBoards.length > 0 && (
-                  <button
-                    onClick={() => setStep("usePrevious")}
-                    className="w-full bg-black border-2 border-yellow-400 text-yellow-300 font-bold py-3 uppercase hover:bg-gray-500 hover:text-white transition-all duration-200 mt-2"
-                  >
-                    Use Previous Board
-                  </button>
-                )}
+            <div className="space-y-6">
+              <div>
+                <label className="block text-yellow-300 mb-2 font-bold">
+                  Board Name
+                </label>
+                <input
+                  type="text"
+                  value={boardName}
+                  onChange={(e) => setBoardName(e.target.value)}
+                  placeholder="Bitcoin Conference Q&A"
+                  className="w-full px-4 py-3 bg-black text-white placeholder-gray-400 border-2 border-yellow-400 focus:outline-none focus:border-green-400"
+                />
               </div>
-            )}
-            {step === "nwc" && (
-              // Enter Nwc String
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-yellow-300 mb-2">
-                    NWC Connection String
-                  </label>
-                  <textarea
-                    value={nwcString}
-                    onChange={(e) => setNwcString(e.target.value)}
-                    placeholder="nostr+walletconnect://..."
-                    rows={4}
-                    className="w-full px-4 py-3 bg-black text-white placeholder-gray-400 border-2 border-yellow-400 focus:outline-none focus:border-brightGreen font-mono text-sm resize-none"
-                  />
-                </div>
 
-                {/* // Set Password */}
-                <div>
-                  <label className="block text-yellow-300 mb-2">
-                    Set Password
-                  </label>
-                  <textarea
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="enter password"
-                    rows={4}
-                    className="w-full h-12 px-4 py-3  bg-black text-white placeholder-gray-400 border-2 border-yellow-400 focus:outline-none focus:border-brightGreen font-mono text-sm resize-none"
-                  />
-                </div>
+              <div>
+                <label className="block text-yellow-300 mb-2 font-bold">
+                  Lightning Address
+                </label>
+                <input
+                  type="text"
+                  value={lightningAddress}
+                  onChange={(e) => setLightningAddress(e.target.value)}
+                  placeholder="you@getalby.com"
+                  className="w-full px-4 py-3 bg-black text-white placeholder-gray-400 border-2 border-yellow-400 focus:outline-none focus:border-green-400"
+                />
+                <p className="text-gray-400 text-sm mt-1">
+                  Where zaps will be received
+                </p>
+              </div>
 
-                {/* Explorable Toggle with eligibility status */}
-                <div className="bg-black border-2 border-yellow-400 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <label className="text-yellow-300 font-bold">
-                        Make Board Explorable
-                      </label>
-                      <p className="text-gray-400 text-sm mt-1">
-                        Allow others to discover your board publicly
-                      </p>
-                      {/* Show different status messages based on verification state */}
-                      {isLoggedIn &&
-                        !isVerifyingEligibility &&
-                        !eligibilityError && (
-                          <p className="text-green-400 text-sm mt-1">
-                            Connected and verified
-                          </p>
-                        )}
-                      {isVerifyingEligibility && (
-                        <p className="text-yellow-400 text-sm mt-1">
-                          Verifying eligibility...
-                        </p>
-                      )}
-                      {eligibilityError && (
-                        <p className="text-red-400 text-sm mt-1">
-                          {eligibilityError}
-                        </p>
-                      )}
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer ml-4">
-                      <input
-                        type="checkbox"
-                        checked={isExplorable}
-                        onChange={(e) =>
-                          handleExplorableToggle(e.target.checked)
-                        }
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-yellow-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+              <div>
+                <label className="block text-yellow-300 mb-2 font-bold">
+                  Minimum Zap Amount (sats)
+                </label>
+                <input
+                  type="number"
+                  value={minZapAmount}
+                  onChange={(e) => setMinZapAmount(Number(e.target.value))}
+                  className="w-full px-4 py-3 bg-black text-white border-2 border-yellow-400 focus:outline-none focus:border-green-400"
+                />
+              </div>
+
+              {/* Explorable Toggle */}
+              <div className="bg-black border-2 border-yellow-400 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <label className="text-yellow-300 font-bold">
+                      Make Board Explorable
                     </label>
+                    <p className="text-gray-400 text-sm mt-1">
+                      {PREMIUM_AMOUNT} sats - List publicly for discovery on
+                      explore section
+                    </p>
+
+                    {isLoggedIn && isVerifyingEligibility && (
+                      <p className="text-yellow-400 text-sm mt-1">
+                        Verifying eligibility...
+                      </p>
+                    )}
+
+                    {isLoggedIn && isEligible && !isPaid && (
+                      <p className="text-yellow-400 text-sm mt-1">
+                        Payment required
+                      </p>
+                    )}
+
+                    {isPaid && (
+                      <p className="text-green-400 text-sm mt-1">
+                        ✓ Payment confirmed
+                      </p>
+                    )}
+
+                    {eligibilityError && (
+                      <p className="text-red-400 text-sm mt-1">
+                        {eligibilityError}
+                      </p>
+                    )}
                   </div>
-                </div>
-
-                {error && <p className="text-red-400 text-sm">{error}</p>}
-
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setStep("info")}
-                    className="flex-1 bg-black border-2 border-yellow-400 text-yellow-300 font-bold py-3 uppercase hover:bg-yellow-500 hover:text-black transition-all duration-200"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={handleCreateBoard}
-                    disabled={isValidating || !isCreateButtonEnabled()}
-                    className="flex-1 bg-yellow-400 hover:bg-yellow-500 disabled:bg-yellow-400/20 disabled:border-yellow-500/50 disabled:cursor-not-allowed text-black font-bold py-3 uppercase border-2 border-yellow-300 transition-all duration-200"
-                  >
-                    {isValidating ? "Creating..." : "Create Board"}
-                  </button>
+                  <label className="relative inline-flex items-center cursor-pointer ml-4">
+                    <input
+                      type="checkbox"
+                      checked={isExplorable}
+                      onChange={(e) => handleExplorableToggle(e.target.checked)}
+                      disabled={isVerifyingEligibility || isExplorable}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-yellow-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500 peer-disabled:opacity-50"></div>
+                  </label>
                 </div>
               </div>
-            )}
-            {/* render previous board step */}
-            {step === "usePrevious" && renderUsePreviousStep()}{" "}
+
+              {error && (
+                <div className="bg-red-900/50 border-2 border-red-500 p-3">
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+
+              <button
+                onClick={handleCreateBoard}
+                disabled={isCreating || !isCreateButtonEnabled()}
+                className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-700 disabled:border-gray-600 disabled:cursor-not-allowed disabled:text-gray-500 text-black font-bold py-3 uppercase border-2 border-yellow-300 transition-all duration-200"
+              >
+                {isCreating ? "Creating..." : "Create Board"}
+              </button>
+
+              {prevBoards.length > 0 && (
+                <button
+                  onClick={() => setShowPrevBoards(true)}
+                  className="w-full bg-black border-2 border-yellow-400 text-yellow-300 font-bold py-3 uppercase hover:bg-gray-800 transition-all duration-200"
+                >
+                  Use Previous Board
+                </button>
+              )}
+            </div>
           </div>
         </RetroFrame>
       </div>
-      {/* Login Overlay */}
+
+      {/* Modals */}
       {showLoginOverlay && (
         <NostrLoginOverlay
           onSuccess={handleLoginSuccess}
           onClose={handleLoginClose}
         />
       )}
+
+      {showPrevBoards && renderPreviousBoardsModal()}
+      {showPaymentQR && renderPaymentQR()}
     </div>
   );
 }

@@ -18,9 +18,7 @@ export function getPool(): SimplePool {
     return poolInstance;
 }
 
-/**
- * Publish board config to Nostr relays
- */
+// Publish board config to Nostr relays
 export async function publishBoardConfig(
     config: BoardConfig,
     privateKey: Uint8Array | null,
@@ -50,8 +48,10 @@ export async function publishBoardConfig(
             minZapAmount: config.minZapAmount,
             lightningAddress: config.lightningAddress,
             createdAt: config.createdAt,
+            isExplorable: config.isExplorable,
         }),
     };
+    console.log('EVENT:', event);
 
     let signedEvent: Event;
     if (privateKey === null) {
@@ -111,6 +111,7 @@ export async function fetchBoardConfig(
                             lightningAddress: lnTag?.[1] || '',
                             creatorPubkey: event.pubkey,
                             createdAt: content.createdAt,
+                            isExplorable: content.isExplorable
                         };
                         resolve(config);
                     } catch (err) {
@@ -170,6 +171,7 @@ export async function fetchAllBoards(): Promise<BoardConfig[]> {
                         lightningAddress: lnTag?.[1] || '',
                         creatorPubkey: event.pubkey,
                         createdAt: content.createdAt,
+                        isExplorable: content.isExplorable
                     };
 
                     boards.push(config);
@@ -311,6 +313,7 @@ export function monitorZapReceipts(
  * Requirements:
  * - Must have NIP-05 identifier in kind 0 (profile metadata)
  * - Must follow at least 10 people (kind 3 contact list)
+ * - Has paid the premium fee
  */
 export async function verifyUserEligibility(
     pubkey: string

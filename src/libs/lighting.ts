@@ -1,14 +1,10 @@
-/**
- * Validate Lightning address format
- */
+// Validate Lightning address format
 export function isValidLightningAddress(address: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(address);
 }
 
-/**
- * Fetch and validate Lightning address (check if it exists)
- */
+// Fetch and validate Lightning address (check if it exists)
 export async function validateLightningAddress(
   address: string
 ): Promise<{ valid: boolean; error?: string }> {
