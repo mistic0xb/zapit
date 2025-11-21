@@ -12,23 +12,23 @@ import ExplorePage from "./pages/ExplorePage";
 function App() {
   return (
     <BrowserRouter>
-        <div className="flex flex-col min-h-screen">
-          <Header/>
-          <div className="grow">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/create" element={<CreateBoard />} />
-              <Route path="/explore" element={<ExplorePage />} />
-              <Route path="/dashboard/:boardId" element={<Dashboard />} />
-              <Route path="/board/:boardId" element={<BoardDisplay />} />
-              <Route path="/pay/:boardId" element={<PaymentPage />} />
-              <Route path="/zapme" element={<ZapMe />} />
-            </Routes>
-          </div>
+      <div className="flex flex-col min-h-screen ">
+        <Header />
+        <div className="grow">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/create" element={<CreateBoard />} />
+            <Route path="/explore" element={<ExplorePage />} />
+            <Route path="/dashboard/:boardId" element={<Dashboard />} />
+            <Route path="/board/:boardId" element={<BoardDisplay />} />
+            <Route path="/pay/:boardId" element={<PaymentPage />} />
+            <Route path="/zapme" element={<ZapMe />} />
+          </Routes>
         </div>
-        <div>
-          <Footer />
-        </div>
+      </div>
+      <div>
+        <Footer />
+      </div>
     </BrowserRouter>
   );
 }

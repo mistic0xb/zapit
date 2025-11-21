@@ -9,6 +9,7 @@ import generalMsgSfx from "../assets/sounds/general-msg.wav";
 import top1Sfx from "../assets/sounds/top1.wav";
 import top2Sfx from "../assets/sounds/top2.wav";
 import top3Sfx from "../assets/sounds/top3.wav";
+import Loading from "../components/Loading";
 
 const RANK_COLORS = [
   {
@@ -21,7 +22,7 @@ const RANK_COLORS = [
     bg: "bg-yellow-600",
     text: "text-yellow-600",
     glow: "shadow-yellow-600/50",
-    light: "text-yellow-300/90",
+    light: "text-yellow-600/90",
   },
   {
     bg: "bg-yellow-300",
@@ -164,12 +165,7 @@ export default function BoardDisplay() {
     return `${Math.floor(sec / 86400)} days ago`;
   };
 
-  if (loading)
-    return (
-      <div className="min-h-screen bg-blackish flex items-center justify-center text-xl text-gray-900">
-        Loading...
-      </div>
-    );
+  if (loading) return <Loading />;
   if (error || !boardConfig)
     return (
       <div className="min-h-screen text-red-600 text-xl p-10">
@@ -180,10 +176,10 @@ export default function BoardDisplay() {
   return (
     <div className="min-h-screen bg-blackish p-6 lg:p-10">
       {/* Full container */}
-      <div className="max-w-[1800px] mx-auto space-y-6">
+      <div className="w-full mx-auto space-y-6">
         {/* Board name + volume */}
         <div className="card-style p-4 flex justify-between items-center">
-          <h2 className="text-2xl font-semibold text-yellow-300">
+          <h2 className="text-2xl lg:max-proj:text-4xl proj:text-7xl  text-center w-full font-semibold text-yellow-300">
             {boardConfig.boardName}
           </h2>
 
@@ -305,7 +301,7 @@ export default function BoardDisplay() {
                             </div>
                             {m.content && (
                               <div
-                                className={`text-2xl ${rankColor.light} mt-1 max-w-[150px] truncate`}
+                                className={`text-2xl ${rankColor.light} mt-1 max-w-[390px] text-wrap break-all`}
                               >
                                 {m.content}
                               </div>
