@@ -10,26 +10,27 @@ import top1Sfx from "../assets/sounds/top1.wav";
 import top2Sfx from "../assets/sounds/top2.wav";
 import top3Sfx from "../assets/sounds/top3.wav";
 import Loading from "../components/Loading";
+import { BsLightning } from "react-icons/bs";
 
 const RANK_COLORS = [
   {
     bg: "bg-orange-500",
     text: "text-orange-500",
     glow: "shadow-orange-500/50",
-    light: "text-orange-300/90",
+    light: "text-orange-300",
   },
   {
-    bg: "bg-yellow-600",
-    text: "text-yellow-600",
-    glow: "shadow-yellow-600/50",
-    light: "text-yellow-600/90",
+    bg: "bg-orange-400",
+    text: "text-orange-400",
+    glow: "shadow-orange-400/50",
+    light: "text-orange-200/80",
   },
   {
-    bg: "bg-yellow-300",
-    text: "text-yellow-300",
-    glow: "shadow-yellow-300/50",
-    light: "text-yellow-300/90",
-  }, // 3rd place
+    bg: "bg-orange-300",
+    text: "text-orange-300",
+    glow: "shadow-orange-300/50",
+    light: "text-orange-100/70",
+  },
 ];
 
 export default function BoardDisplay() {
@@ -179,14 +180,14 @@ export default function BoardDisplay() {
       <div className="w-full mx-auto space-y-6">
         {/* Board name + volume */}
         <div className="card-style p-4 flex justify-between items-center">
-          <h2 className="text-2xl lg:max-proj:text-4xl proj:text-7xl  text-center w-full font-semibold text-yellow-300">
+          <h2 className="text-2xl lg:max-proj:text-4xl proj:text-8xl  text-center w-full font-semibold text-yellow-300 animate-pulse">
             {boardConfig.boardName}
           </h2>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsMuted(!isMuted)}
-              className="text-violet-300 hover:text-violet-200"
+              className="text-violet-300 hover:text-violet-200 opacity-65"
             >
               {isMuted ? <FaVolumeMute size={24} /> : <FaVolumeUp size={24} />}
             </button>
@@ -197,22 +198,28 @@ export default function BoardDisplay() {
               step="0.05"
               value={volume}
               onChange={(e) => setVolume(parseFloat(e.target.value))}
-              className="w-32 accent-violet-400"
+              className="w-32 accent-violet-400 opacity-60"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-6 h-full ">
-          <div className="col-span-2 flex flex-col gap-4 ">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+          <div className="lg:col-span-2 flex flex-col gap-3 sm:gap-4 md:gap-5">
             {/* Stats */}
             <div className="grid grid-cols-2 gap-4">
               <div className="card-style flex flex-col gap-2 p-4 text-center font-semibold text-yellow-500">
-                <span>Total Sats</span>
-                <span className="text-yellow-text text-2xl">{totalSats}</span>
+                <span className="text-md lg:max-proj:text-lg proj:text-3xl">
+                  Total Sats
+                </span>
+                <span className="text-yellow-300/90 text-xl lg:max-proj:text-2xl proj:text-7xl">
+                  {totalSats}
+                </span>
               </div>
               <div className="card-style flex flex-col gap-2 p-4 text-center font-semibold text-yellow-500">
-                <span>Total Messages</span>
-                <span className="text-yellow-text text-2xl">
+                <span className="text-md lg:max-proj:text-lg proj:text-3xl">
+                  Total Messages
+                </span>
+                <span className="text-yellow-300/90 text-xl lg:max-proj:text-2xl proj:text-7xl">
                   {messages.length}
                 </span>
               </div>
@@ -220,14 +227,14 @@ export default function BoardDisplay() {
             {/* Live messages */}
             <div className="card-style p-6 overflow-y-auto h-full max-h-[70vh] scrollbar-custom">
               {sortedMessages.length === 0 ? (
-                <p className="text-yellow-text text-xl">
+                <p className="text-yellow-600/60 text-xl proj:text-5xl text-center h-full flex items-center justify-center">
                   Waiting for messages…
                 </p>
               ) : (
                 sortedMessages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`bg-blackish border-border-purple border p-4 mb-4 transition-all ease-linear ${
+                    className={`bg-blackish border-border-purple border p-4 mb-4 transition-all ease-linear flex flex-col ${
                       highlightedRows.includes(msg.id)
                         ? "border-yellow-200/60"
                         : ""
@@ -235,25 +242,25 @@ export default function BoardDisplay() {
                   >
                     <div className="font-bold flex justify-between items-center gap-5">
                       <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-violet-300/80 rounded-full flex items-center justify-center">
-                          <span className="text-black text-md sm:text-lg font-bold">
+                        <div className="w-6 h-6 sm:max-proj:w-8 sm:max-proj:h-8 proj:w-12 proj:h-12 bg-violet-300/80 rounded-full flex items-center justify-center">
+                          <span className="text-black text-md sm:max-proj:text-lg proj:text-2xl font-bold">
                             {msg.displayName?.[0]?.toUpperCase() || "A"}
                           </span>
                         </div>
-                        <span className="text-violet-300/80 font-medium text-sm sm:text-base">
+                        <span className="text-violet-300/80 font-medium text-sm sm:max-lg:text-base lg:max-proj:text-lg proj:text-3xl">
                           {msg.displayName || "Anonymous"}
                         </span>
                       </div>
                       <div className="flex flex-col items-end">
-                        <span className="text-yellow-400/90">
+                        <span className="text-yellow-400/90 proj:text-3xl">
                           {msg.zapAmount.toLocaleString()} sats
                         </span>
-                        <div className="text-gray-600 text-xs">
+                        <div className="text-gray-600 text-xs lg:max-proj:text-mid proj:text-xl">
                           {formatTimeAgo(msg.timestamp)}
                         </div>
                       </div>
                     </div>
-                    <p className="text-slate-400/90 text-xl pt-4 whitespace-normal break-all">
+                    <p className="text-slate-400/90 text-xl proj:text-4xl pt-4 max-w-[1600px] whitespace-normal break-all">
                       {msg.content}
                     </p>
                   </div>
@@ -265,8 +272,8 @@ export default function BoardDisplay() {
           <div className="space-y-6">
             {/* Leaderboard */}
             <div className="bg-card-bg p-6 rounded-lg">
-              <h3 className="font-bold text-xl text-violet-300/90 mb-4">
-                Top Zappers
+              <h3 className="font-bold text-xl proj:text-6xl text-violet-300/90 mb-6 flex items-center justify-center">
+                Top Zappers <BsLightning color="#ffdf20" />
               </h3>
               <div className="space-y-3">
                 {leaderboard.map((m, i) => {
@@ -276,41 +283,45 @@ export default function BoardDisplay() {
                   return (
                     <div
                       key={m.id}
-                      className={`p-3 rounded-lg border transition-all duration-300 ${
+                      className={`p-2 rounded-lg border transition-all duration-300 ${
                         isPromoted
                           ? `border-${rankColor.text.split("-")[1]}-400 ${
                               rankColor.glow
                             }`
-                          : ""
-                      } ${
-                        highlightedRows.includes(m.id) ? "" : "bg-blackish/40"
-                      }`}
+                          : "border-border-purple"
+                      } ${highlightedRows.includes(m.id) ? "" : "bg-blackish"}`}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-start gap-3">
-                          <div
-                            className={`w-6 h-6 ${rankColor.bg} rounded-full flex items-center justify-center font-bold text-white shadow-lg`}
-                          >
-                            {i + 1}
+                        <div className="flex flex-col justify-between items-start w-full p-2">
+                          <div className="flex items-center justify-center w-full">
+                            <div className="w-full flex items-center justify-start gap-2">
+                              <div
+                                className={`w-6 h-6 proj:w-10 proj:h-10 ${rankColor.bg} rounded-full flex items-center justify-center font-bold proj:text-2xl text-blackish shadow-lg`}
+                              >
+                                {i + 1}
+                              </div>
+                              <div
+                                className={`font-bold ${rankColor.text} text-lg proj:text-2xl`}
+                              >
+                                {m.displayName || "Anon"}
+                              </div>
+                            </div>
+                            <div
+                              className={`font-bold ${rankColor.text} text-2xl proj:text-5xl flex items-baseline gap-2`}
+                            >
+                              {m.zapAmount.toLocaleString()}{" "}
+                              <span className="text-lg proj:text-xl">sats</span>
+                            </div>
                           </div>
                           <div>
-                            <div
-                              className={`font-bold ${rankColor.text} text-lg`}
-                            >
-                              {m.displayName || "Anon"}
-                            </div>
                             {m.content && (
                               <div
-                                className={`text-2xl ${rankColor.light} mt-1 max-w-[390px] text-wrap break-all`}
+                                className={`text-2xl proj:text-3xl ${rankColor.light} mt-1 w-full text-wrap break-all`}
                               >
                                 {m.content}
                               </div>
                             )}
                           </div>
-                        </div>
-                        <div className={`font-bold ${rankColor.text} text-2xl`}>
-                          {m.zapAmount.toLocaleString()}{" "}
-                          <span className="text-lg">sats</span>
                         </div>
                       </div>
                     </div>
@@ -320,8 +331,8 @@ export default function BoardDisplay() {
             </div>
 
             {/* QR Section */}
-            <div className="bg-card-bg  p-6 shadow-lg text-center">
-              <h3 className="font-bold text-xl text-violet-300 mb-4">
+            <div className="bg-card-bg p-6 shadow-lg text-center">
+              <h3 className="font-bold text-xl proj:text-4xl text-violet-300 mb-4">
                 Scan to Zap
               </h3>
               <a
@@ -331,14 +342,20 @@ export default function BoardDisplay() {
               >
                 <QRCodeSVG
                   value={`${window.location.origin}/pay/${boardId}`}
-                  size={230}
+                  size={
+                    window.innerWidth < 640
+                      ? 180
+                      : window.innerWidth < 2000
+                      ? 290
+                      : 600
+                  }
                   level="M"
                   bgColor="#ffffff"
                   fgColor="#000000"
-                  className="mx-auto"
+                  className="mx-auto border-2 border-white"
                 />
               </a>
-              <div className="text-yellow-300 mt-3">
+              <div className="text-yellow-300 mt-3 proj:text-3xl">
                 Min: {boardConfig.minZapAmount} sats
               </div>
             </div>
