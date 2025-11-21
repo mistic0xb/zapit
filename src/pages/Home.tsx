@@ -1,81 +1,154 @@
 import { useNavigate } from "react-router";
-import RetroFrame from "../components/Frame";
-import { FiTarget } from "react-icons/fi";
-import { BsLightning, BsPerson } from "react-icons/bs";
+import { FiZap } from "react-icons/fi";
+import { BsLightning, BsPerson, BsArrowRight } from "react-icons/bs";
+import { BiLink } from "react-icons/bi";
+import Pricing from "../components/PricingModel";
 
 function Home() {
   const navigate = useNavigate();
 
   return (
-    <RetroFrame>
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="max-w-3xl w-full mx-auto text-center py-8">
-          <h1 className="text-5xl font-bold mb-4 text-yellow-400">
-            Lightning Zap Board
-          </h1>
-          <p className="text-lg text-white/80 mb-10 tracking-wide">
-            Create a live message board powered by Bitcoin Lightning payments.
-            <br />
-            Perfect for Q&A sessions, live events, and interactive displays.
-          </p>
+    <div className="min-h-screen bg-blackish relative overflow-hidden">
+      {/* Subtle background gradient accent */}
 
-          <div className="flex justify-center gap-4">
-            {/* Explore Button */}
-            <button
-              onClick={() => navigate("/explore")}
-              className=" hover:bg-yellow-500 hover:text-black text-yellow-400 font-bold py-4 px-10 text-lg uppercase border-2 border-yellow-300 transition-all duration-200 hover:shadow-[0_0_10px_#ffff00]"
-            >
-              Explore Boards
-            </button>
+      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 sm:px-6 md:px-8 lg:px-12 py-12 sm:py-16 md:py-20">
+        <div className="max-w-7xl w-full mx-auto">
+          {/* Hero Section */}
+          <div className="text-center mb-16 sm:mb-20 md:mb-24 lg:mb-28">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 sm:mb-8 border border-violet-300/20 bg-violet-300/5 backdrop-blur-sm text-violet-300 text-xs sm:text-sm md:text-base proj:text-2xl uppercase tracking-wider">
+              <BsLightning className="text-yellow-text" />
+              <span>Powered by Bitcoin Lightning and Nostr</span>
+            </div>
 
-            {/* Create Board Button */}
-            <button
-              onClick={() => navigate("/create")}
-              className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-4 px-10 text-lg uppercase border-2 border-yellow-300 transition-all duration-200 hover:shadow-[0_0_10px_#ffff00]"
-            >
-              Create Your Board
-            </button>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl proj:text-[12rem] font-bold mb-6 sm:mb-8 md:mb-10 leading-tight">
+              <span className="text-yellow-text">Lightning</span>
+              <br />
+              <span className="text-white">Zap Board</span>
+            </h1>
+
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl proj:text-5xl text-gray-400 mb-10 sm:mb-12 md:mb-16 leading-relaxed max-w-4xl mx-auto px-4">
+              Create live message boards powered by instant Bitcoin payments.
+              <span className="text-yellow-text/80">
+                {" "}
+                No accounts, no hassle
+              </span>
+              —just real-time engagement for your events and communities.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-5 md:gap-6">
+              <button
+                onClick={() => navigate("/create")}
+                className="group w-full sm:w-auto bg-yellow-text hover:bg-yellow-text/90 text-blackish font-bold py-4 sm:py-5 md:py-6 proj:py-10 px-8 sm:px-10 md:px-12 lg:px-14 proj:px-24 text-base sm:text-lg md:text-xl lg:text-2xl proj:text-4xl uppercase tracking-wide transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,223,32,0.4)] transform hover:scale-[1.02] flex items-center justify-center gap-3 cursor-pointer"
+              >
+                Create Your Board
+                <BsArrowRight className="group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => navigate("/explore")}
+                className="w-full sm:w-auto bg-transparent hover:bg-yellow-text/5 text-yellow-text font-bold py-4 sm:py-5 md:py-6 proj:py-10 px-8 sm:px-10 md:px-12 lg:px-14 proj:px-24 text-base sm:text-lg md:text-xl lg:text-2xl proj:text-4xl uppercase tracking-wide border-2 border-yellow-text/50 hover:border-yellow-text transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,223,32,0.2)] cursor-pointer"
+              >
+                Explore Boards
+              </button>
+            </div>
           </div>
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-            <div className="bg-black flex flex-col justify-center items-center border-2 border-yellow-500 p-6 text-center">
-              <div className="text-4xl text-center text-brightGreen mb-3">
-                <FiTarget />
+
+          {/* Features Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6 lg:gap-7 mb-12 sm:mb-16 md:mb-20">
+            {/* Feature 1 */}
+            <div className="card-style group hover:border-yellow-text/30 transition-all duration-500 p-6 sm:p-7 md:p-8 lg:p-9 proj:p-14 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-linear-to-br from-yellow-text/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10">
+                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 proj:w-32 proj:h-32 mb-4 sm:mb-5 md:mb-6 proj:mb-10 text-3xl sm:text-4xl md:text-5xl proj:text-7xl text-yellow-text transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                  <FiZap />
+                </div>
+                <h3 className="text-white font-bold mb-3 sm:mb-4 proj:mb-6 uppercase text-sm sm:text-base md:text-lg lg:text-xl proj:text-3xl tracking-wider">
+                  Instant Setup
+                </h3>
+                <p className="text-gray-500 text-xs sm:text-sm md:text-base proj:text-2xl leading-relaxed">
+                  Paste your NWC connection and you're live in seconds
+                </p>
               </div>
-              <h3 className="text-yellow-300 font-bold mb-2 uppercase">
-                Simple Setup
-              </h3>
-              <p className="text-white text-sm">
-                Just paste your NWC string and get a shareable board link
-              </p>
             </div>
 
-            <div className="bg-black border-2 border-yellow-500 p-6 flex flex-col items-center justify-center text-center">
-              <div className="text-4xl mb-3 text-brightGreen">
-                <BsLightning />
+            {/* Feature 2 */}
+            <div className="card-style group hover:border-yellow-text/30 transition-all duration-500 p-6 sm:p-7 md:p-8 lg:p-9 proj:p-14 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-linear-to-br from-yellow-text/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10">
+                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 proj:w-32 proj:h-32 mb-4 sm:mb-5 md:mb-6 proj:mb-10 text-3xl sm:text-4xl md:text-5xl proj:text-7xl text-yellow-text transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                  <BsLightning />
+                </div>
+                <h3 className="text-white font-bold mb-3 sm:mb-4 proj:mb-6 uppercase text-sm sm:text-base md:text-lg lg:text-xl proj:text-3xl tracking-wider">
+                  Real-Time
+                </h3>
+                <p className="text-gray-500 text-xs sm:text-sm md:text-base proj:text-2xl leading-relaxed">
+                  Messages appear the moment payment confirms
+                </p>
               </div>
-              <h3 className="text-yellow-300 font-bold mb-2 uppercase">
-                Real-time Messages
-              </h3>
-              <p className="text-white text-sm">
-                Messages appear instantly when someone zaps
-              </p>
             </div>
 
-            <div className="bg-black border-2 border-yellow-500 p-6 flex flex-col items-center justify-center text-center">
-              <div className="text-4xl mb-3 text-brightGreen">
-                <BsPerson />
+            {/* Feature 3 */}
+            <div className="card-style group hover:border-yellow-text/30 transition-all duration-500 p-6 sm:p-7 md:p-8 lg:p-9 proj:p-14 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-linear-to-br from-yellow-text/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10">
+                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 proj:w-32 proj:h-32 mb-4 sm:mb-5 md:mb-6 proj:mb-10 text-3xl sm:text-4xl md:text-5xl proj:text-7xl text-yellow-text transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                  <BsPerson />
+                </div>
+                <h3 className="text-white font-bold mb-3 sm:mb-4 proj:mb-6 uppercase text-sm sm:text-base md:text-lg lg:text-xl proj:text-3xl tracking-wider">
+                  No Sign-Up
+                </h3>
+                <p className="text-gray-500 text-xs sm:text-sm md:text-base proj:text-2xl leading-relaxed">
+                  Fully decentralized with no registration required
+                </p>
               </div>
-              <h3 className="text-yellow-300 font-bold mb-2 uppercase">
-                No Account Needed
-              </h3>
-              <p className="text-white text-sm">
-                Fully decentralized, no sign-ups required
-              </p>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="card-style group hover:border-yellow-text/30 transition-all duration-500 p-6 sm:p-7 md:p-8 lg:p-9 proj:p-14 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-linear-to-br from-yellow-text/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10">
+                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 proj:w-32 proj:h-32 mb-4 sm:mb-5 md:mb-6 proj:mb-10 text-3xl sm:text-4xl md:text-5xl proj:text-7xl text-yellow-text transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                  <BiLink />
+                </div>
+                <h3 className="text-white font-bold mb-3 sm:mb-4 proj:mb-6 uppercase text-sm sm:text-base md:text-lg lg:text-xl proj:text-3xl tracking-wider">
+                  Easy Access
+                </h3>
+                <p className="text-gray-500 text-xs sm:text-sm md:text-base proj:text-2xl leading-relaxed">
+                  Share via link for instant participation
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Use Cases Section */}
+          <div className="text-center">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl proj:text-7xl font-bold text-white mb-4 sm:mb-6 md:mb-8">
+              Perfect For
+            </h2>
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-5">
+              {[
+                "Live Events",
+                "Q&A Sessions",
+                "Conferences",
+                "Streams",
+                "Meetups",
+                "Workshops",
+              ].map((useCase) => (
+                <div
+                  key={useCase}
+                  className="px-5 sm:px-6 md:px-8 proj:px-12 py-2 sm:py-3 md:py-4 proj:py-6 bg-card-bg border border-border-purple hover:border-violet-300/30 text-gray-400 hover:text-yellow-text text-xs sm:text-sm md:text-base lg:text-lg proj:text-3xl transition-all duration-300 cursor-default"
+                >
+                  {useCase}
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
-    </RetroFrame>
+      <Pricing />
+    </div>
   );
 }
 
