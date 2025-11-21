@@ -3,13 +3,7 @@ import { useParams } from "react-router";
 import { QRCodeSVG } from "qrcode.react";
 import { fetchBoardConfig, subscribeToZapMessages } from "../libs/nostr";
 import type { BoardConfig, ZapMessage } from "../types/types";
-import {
-  FaCheck,
-  FaCopy,
-  FaLink,
-  FaVolumeMute,
-  FaVolumeUp,
-} from "react-icons/fa";
+import { FaLink, FaVolumeMute, FaVolumeUp } from "react-icons/fa";
 
 import generalMsgSfx from "../assets/sounds/general-msg.wav";
 import top1Sfx from "../assets/sounds/top1.wav";
@@ -17,7 +11,6 @@ import top2Sfx from "../assets/sounds/top2.wav";
 import top3Sfx from "../assets/sounds/top3.wav";
 import Loading from "../components/Loading";
 import { BsLightning } from "react-icons/bs";
-import { GoVerified } from "react-icons/go";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
 
 const RANK_COLORS = [
@@ -54,7 +47,6 @@ export default function BoardDisplay() {
   const isLeaderboardSoundPlayingRef = useRef(false);
   const [highlightedRows, setHighlightedRows] = useState<string[]>([]);
   const [promotedUsers, setPromotedUsers] = useState<string[]>([]);
-  const [urlCopied, setUrlCopied] = useState(false);
 
   useEffect(() => {
     const loadBoard = async () => {
@@ -203,8 +195,6 @@ export default function BoardDisplay() {
               onClick={() => {
                 const url = `${window.location.origin}/board/${boardId}`;
                 navigator.clipboard.writeText(url);
-                setUrlCopied(true);
-                setTimeout(() => setUrlCopied(false), 2000);
               }}
               className="text-gray-300 hover:text-gray-200 opacity-90 hover:opacity-100 transition-all duration-300"
               title="Copy board URL"
