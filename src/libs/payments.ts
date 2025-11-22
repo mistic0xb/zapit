@@ -2,9 +2,9 @@ import { DEFAULT_RELAYS, getPool } from "./nostr";
 import { type Filter, type Event } from "nostr-tools";
 import { generateInvoice, parseZapReceipt } from "./nip57";
 
-export const PREMIUM_AMOUNT = 10;
-const PREMIUM_RECIPIENT_PUBKEY = "72bdbc57bdd6dfc4e62685051de8041d148c3c68fe42bf301f71aa6cf53e52fb";
-export const PREMIUM_LIGHTNING_ADDRESS = "zapit@coinos.io";
+export const PREMIUM_AMOUNT = import.meta.env.VITE_PREMIUM_AMOUNT;
+const PREMIUM_RECIPIENT_PUBKEY = import.meta.env.VITE_PREMIUM_RECIPIENT_PUBKEY;
+export const PREMIUM_LIGHTNING_ADDRESS = import.meta.env.VITE_PREMIUM_LIGHTNING_ADDRESS;
 
 // Generate Lightning payment URI for premium board
 export async function generatePremiumInvoice(boardId: string, userPubkey: string) {
@@ -105,7 +105,7 @@ export async function verifyPremiumPayment(boardId: string, userPubkey: string):
       resolve(found);
     }, 5000);
 
-    // Look for zaps >= 3900 sats to mist@coinos.io
+    // Look for zaps >=  PREMIUM_AMOUNT (sats) to PREMIUM_LIGHTNING_ADDRESS 
     const filter: Filter = {
       kinds: [9735],
       "#p": [PREMIUM_RECIPIENT_PUBKEY],
