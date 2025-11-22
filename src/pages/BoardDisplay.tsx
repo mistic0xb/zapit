@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router";
 import { QRCodeSVG } from "qrcode.react";
-import { fetchBoardConfig, subscribeToZapMessages } from "../libs/nostr";
-import type { BoardConfig, ZapMessage } from "../types/types";
+import { fetchBoardConfig, subscribeToZapMessages, publishBoardConfig } from "../libs/nostr";
+import type { BoardConfig, ZapMessage, StoredBoard } from "../types/types";
 import { FaLink, FaVolumeMute, FaVolumeUp } from "react-icons/fa";
 
 import generalMsgSfx from "../assets/sounds/general-msg.wav";
@@ -12,6 +12,12 @@ import top3Sfx from "../assets/sounds/top3.wav";
 import Loading from "../components/Loading";
 import { BsLightning } from "react-icons/bs";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
+import { MdVerified } from "react-icons/md";
+import NostrLoginOverlay from "../components/NostrLoginOverlay";
+import { verifyUserEligibility } from "../libs/nostr";
+import { generatePremiumInvoice, monitorPremiumPayment, PREMIUM_AMOUNT } from "../libs/payments";
+import { FaCheck, FaCopy } from "react-icons/fa";
+import { FiInfo } from "react-icons/fi";
 
 const RANK_COLORS = [
   {
@@ -48,6 +54,19 @@ export default function BoardDisplay() {
   const [highlightedRows, setHighlightedRows] = useState<string[]>([]);
   const [promotedUsers, setPromotedUsers] = useState<string[]>([]);
 
+  // NEW: States for making board explorable - cleaned up to only what's needed
+  const [canUpgrade, setCanUpgrade] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [showLoginOverlay, setShowLoginOverlay] = useState(false);
+  const [isVerifyingEligibility, setIsVerifyingEligibility] = useState(false);
+  const [eligibilityError, setEligibilityError] = useState("");
+  const [showPaymentQR, setShowPaymentQR] = useState(false);
+  const [premiumInvoice, setPremiumInvoice] = useState("");
+  const [isWaitingPayment, setIsWaitingPayment] = useState(false);
+  const [invoiceCopied, setInvoiceCopied] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
+
   useEffect(() => {
     const loadBoard = async () => {
       if (!boardId) return;
@@ -57,11 +76,18 @@ export default function BoardDisplay() {
         const config = await fetchBoardConfig(boardId);
         if (config) {
           setBoardConfig(config);
+          // NEW: Check if this board can be upgraded
+          checkCanUpgrade(boardId, config);
         } else {
           const boards = JSON.parse(localStorage.getItem("boards") || "[]");
           const board = boards.find((b: any) => b.boardId === boardId);
-          if (board) setBoardConfig(board.config);
-          else setError("Board not found");
+          if (board) {
+            setBoardConfig(board.config);
+            // NEW: Check if this board can be upgraded
+            checkCanUpgrade(boardId, board.config);
+          } else {
+            setError("Board not found");
+          }
         }
       } catch (err) {
         console.error(err);
@@ -72,6 +98,16 @@ export default function BoardDisplay() {
     };
     loadBoard();
   }, [boardId]);
+
+  // NEW: Check if board can be upgraded (exists in localStorage AND not explorable)
+  const checkCanUpgrade = (boardId: string, config: BoardConfig) => {
+    const boards: StoredBoard[] = JSON.parse(localStorage.getItem("boards") || "[]");
+    const ownedBoard = boards.find(b => b.boardId === boardId);
+
+    if (ownedBoard && !config.isExplorable) {
+      setCanUpgrade(true);
+    }
+  };
 
   useEffect(() => {
     if (!boardId || !boardConfig) return;
@@ -115,17 +151,13 @@ export default function BoardDisplay() {
       const prevIndex = prevLeaders.indexOf(msg.id);
       const movedUp = wasInTop3 && prevIndex > idx;
 
-      // Check if user is new to top 3 or moved up
       if (!wasInTop3 || movedUp) {
-        // Highlight row
         setHighlightedRows(prev => [...prev, msg.id]);
         setTimeout(() => setHighlightedRows(prev => prev.filter(id => id !== msg.id)), 2000);
 
-        // Add to promoted users for name highlight
         setPromotedUsers(prev => [...prev, msg.id]);
         setTimeout(() => setPromotedUsers(prev => prev.filter(id => id !== msg.id)), 3000);
 
-        // Play sound
         const sound = idx === 0 ? top1Sfx : idx === 1 ? top2Sfx : idx === 2 ? top3Sfx : null;
         if (sound && !isMuted) {
           const audio = new Audio(sound);
@@ -139,12 +171,278 @@ export default function BoardDisplay() {
     setPrevLeaders(currentLeaderIds);
   }, [leaderboard, isMuted, volume]);
 
+  // Handle "Make Board Explorable" button click - show warning first
+  const handleMakeExplorable = () => {
+    setShowWarningModal(true);
+  };
+
+  // User confirms they understand the warning - proceed to login
+  const handleConfirmUpgrade = () => {
+    setShowWarningModal(false);
+    setShowLoginOverlay(true);
+  };
+
+  // Handle successful Nostr login for upgrade
+  const handleLoginSuccess = async (pubkey: string) => {
+    setShowLoginOverlay(false);
+    setIsVerifyingEligibility(true);
+    setEligibilityError("");
+
+    try {
+      const result = await verifyUserEligibility(pubkey);
+
+      if (result.eligible) {
+        // User is eligible, show payment modal
+        setIsVerifyingEligibility(false);
+        await showPaymentModal(boardId!, pubkey);
+      } else {
+        // User is not eligible
+        setIsVerifyingEligibility(false);
+        setEligibilityError(result.reason || "Not eligible to create explorable board");
+      }
+    } catch (err) {
+      setIsVerifyingEligibility(false);
+      setEligibilityError("Failed to verify eligibility. Please try again.");
+    }
+  };
+
+  // Show payment modal and monitor for payment
+  const showPaymentModal = async (boardId: string, pubkey: string) => {
+    try {
+      const res = await generatePremiumInvoice(boardId, pubkey);
+      if (!res) {
+        setError("Failed to generate payment invoice");
+        return;
+      }
+
+      setPremiumInvoice(res.invoice);
+      setShowPaymentQR(true);
+      setIsWaitingPayment(true);
+
+      // Monitor for payment confirmation
+      monitorPremiumPayment(
+        boardId,
+        pubkey,
+        () => {
+          // Payment confirmed! Now upgrade the board
+          setIsWaitingPayment(false);
+          setIsPaymentConfirmed(true);
+          setTimeout(() => {
+            upgradeToExplorable(pubkey);
+          }, 2000);
+        },
+        error => {
+          setError(error);
+          setIsWaitingPayment(false);
+        }
+      );
+    } catch (err) {
+      setError("Failed to initiate payment");
+    }
+  };
+
+  // NEW: Publish updated board config with user's real pubkey and isExplorable=true
+  const upgradeToExplorable = async (userPubkey: string) => {
+    if (!boardConfig || !boardId || !userPubkey) {
+      console.error("Missing required data:", { boardConfig, boardId, userPubkey });
+      setError("Missing required data for upgrade");
+      setIsUpgrading(false);
+      return;
+    }
+
+    setIsUpgrading(true);
+
+    try {
+      // Create new board config with user's real pubkey
+      const updatedConfig: BoardConfig = {
+        ...boardConfig,
+        creatorPubkey: userPubkey, // NEW: Replace ephemeral key with real user pubkey
+        isExplorable: true,
+      };
+
+      // Publish updated config (will create new event with user's pubkey)
+      // privateKey = null means use window.nostr to sign
+      await publishBoardConfig(updatedConfig, null, true);
+
+      // Update localStorage
+      const boards: StoredBoard[] = JSON.parse(localStorage.getItem("boards") || "[]");
+      const boardIndex = boards.findIndex(b => b.boardId === boardId);
+
+      if (boardIndex !== -1) {
+        boards[boardIndex].config = updatedConfig;
+        localStorage.setItem("boards", JSON.stringify(boards));
+      }
+
+      // Update local state
+      setBoardConfig(updatedConfig);
+      setShowPaymentQR(false);
+      setCanUpgrade(false);
+
+      // Reset all upgrade-related states
+      setEligibilityError("");
+
+      // Reload page to start fresh subscription with new pubkey
+      window.location.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upgrade board");
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
+  // Handle login overlay close
+  const handleLoginClose = () => {
+    setShowLoginOverlay(false);
+    setEligibilityError("");
+  };
+
+  // NEW: Handle cancel during payment
+  const handleCancelPayment = () => {
+    setShowPaymentQR(false);
+    setIsWaitingPayment(false);
+    setIsPaymentConfirmed(false);
+    setEligibilityError("");
+  };
+
   const formatTimeAgo = (timestamp: number) => {
     const sec = Math.floor((Date.now() - timestamp) / 1000);
     if (sec < 60) return "Now";
     if (sec < 3600) return `${Math.floor(sec / 60)} min ago`;
     if (sec < 86400) return `${Math.floor(sec / 3600)} hr ago`;
     return `${Math.floor(sec / 86400)} days ago`;
+  };
+
+  // Render warning modal before upgrade
+  const renderWarningModal = () => (
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+      <div className="card-style p-6 max-w-md w-full">
+        <h2 className="text-yellow-text/90 font-bold text-xl mb-4 flex items-center gap-2">
+          <MdVerified className="text-2xl" />
+          Make Board Explorable
+        </h2>
+
+        <div className="mb-6 space-y-3">
+          <p className="text-white text-sm">Upgrading to explorable will:</p>
+          <ul className="text-gray-400 text-sm space-y-2">
+            <li className="flex items-start gap-2">
+              <span className="text-green-400 shrink-0">✓</span>
+              <span>Make your board discoverable to all users</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-green-400 shrink-0">✓</span>
+              <span>Associate board with your nostr npub</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-green-400 shrink-0">✓</span>
+              <span>Enable premium features</span>
+            </li>
+          </ul>
+
+          <div className="bg-red-500/10 border border-red-500/30 p-3 mt-4">
+            <p className="text-red-400 text-sm font-bold mb-2">⚠️ Important Warning:</p>
+            <p className="text-red-400 text-sm">
+              Previous messages sent to the anonymous board will NOT be restored. Only new zaps sent
+              after the upgrade will appear. This board will use a new creator identity (your Nostr
+              pubkey).
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => setShowWarningModal(false)}
+            className="flex-1 bg-transparent hover:bg-gray-700/30 text-white font-bold py-3 text-sm border-2 border-gray-600 hover:border-gray-500 transition-all duration-300"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirmUpgrade}
+            className="flex-1 bg-yellow-text/90 hover:bg-yellow-text text-blackish font-bold py-3 text-sm transition-all duration-300"
+          >
+            I Understand, Continue
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render payment QR modal
+  const renderPaymentQR = () => {
+    return (
+      <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+        <div className="card-style p-6 max-w-md w-full">
+          <h2 className="text-yellow-text/90 font-bold text-xl mb-4">Premium Board Payment</h2>
+          <p className="text-white text-sm mb-4">
+            Pay <span className="text-yellow-text/90 font-bold">{PREMIUM_AMOUNT} sats</span> to
+            unlock explorable status
+          </p>
+
+          <div className="bg-white p-4 mb-4">
+            <QRCodeSVG
+              value={premiumInvoice}
+              size={220}
+              level="M"
+              className="mx-auto w-full h-auto"
+            />
+          </div>
+
+          {/* Copy Invoice Button */}
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(premiumInvoice);
+              setInvoiceCopied(true);
+              setTimeout(() => setInvoiceCopied(false), 2000);
+            }}
+            className="w-full mb-4 bg-violet-300/10 hover:bg-violet-300/20 text-violet-300 font-bold py-3 text-sm border border-violet-300/30 hover:border-violet-300/50 transition-all duration-300 flex items-center justify-center gap-2"
+          >
+            {invoiceCopied ? (
+              <>
+                <FaCheck className="transition-all duration-300" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <FaCopy className="transition-all duration-300" />
+                Copy Invoice
+              </>
+            )}
+          </button>
+
+          {/* Payment Status */}
+          {isWaitingPayment && (
+            <div className="mb-4 p-3 bg-yellow-text/10 border border-yellow-text/30">
+              <p className="text-yellow-text/90 text-center text-sm animate-pulse">
+                ⚡ Waiting for payment...
+              </p>
+            </div>
+          )}
+
+          {/* Payment Success */}
+          {isPaymentConfirmed && (
+            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30">
+              <p className="text-green-400 text-center text-sm font-bold">✓ Payment Confirmed!</p>
+            </div>
+          )}
+
+          {/* Upgrading Status */}
+          {isUpgrading && (
+            <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30">
+              <p className="text-blue-400 text-center text-sm animate-pulse">
+                🔄 Upgrading board...
+              </p>
+            </div>
+          )}
+
+          <button
+            onClick={handleCancelPayment}
+            disabled={isUpgrading}
+            className="w-full bg-transparent hover:bg-gray-700/30 text-white font-bold py-3 text-sm border-2 border-gray-600 hover:border-gray-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
   };
 
   if (loading) return <Loading />;
@@ -155,7 +453,6 @@ export default function BoardDisplay() {
 
   return (
     <div className="min-h-screen bg-blackish p-6 lg:p-10">
-      {/* Full container */}
       <div className="w-full mx-auto space-y-6">
         {/* Board name + volume */}
         <div className="card-style p-4 flex sm:flex-row flex-col justify-between items-center gap-4">
@@ -199,6 +496,54 @@ export default function BoardDisplay() {
             />
           </div>
         </div>
+
+        {/* Show "Make Board Explorable" button for non-explorable boards */}
+        {canUpgrade && (
+          <div className="card-style p-4 border-2 border-yellow-text/30">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <MdVerified className="text-yellow-text/90 text-2xl shrink-0" />
+                <div>
+                  <p className="text-white font-bold text-sm sm:text-base">
+                    Want to make this board discoverable? (Premium)
+                  </p>
+                  <p className="text-gray-400 text-xs sm:text-sm">
+                    Upgrade to explorable and reach more users
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleMakeExplorable}
+                className="bg-yellow-text/90 hover:bg-yellow-text text-blackish font-bold py-2 px-6 text-sm whitespace-nowrap transition-all duration-300"
+              >
+                Make Explorable
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Show eligibility error if user tried to upgrade but not eligible */}
+        {eligibilityError && (
+          <div className="card-style p-4 border-2 border-red-500/30 bg-red-500/10">
+            <div className="flex items-start gap-3">
+              <FiInfo className="text-red-400 text-xl shrink-0 mt-0.5" />
+              <div>
+                <p className="text-red-400 font-bold text-sm mb-1">Eligibility Check Failed</p>
+                <p className="text-red-400 text-xs">{eligibilityError}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Show verifying eligibility status */}
+        {isVerifyingEligibility && (
+          <div className="card-style p-4 border-2 border-yellow-text/30 bg-yellow-text/10">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-yellow-text/90 border-t-transparent"></div>
+              <p className="text-yellow-text/90 text-sm">Verifying eligibility...</p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
           <div className="lg:col-span-2 flex flex-col gap-3 sm:gap-4 md:gap-5">
@@ -341,6 +686,13 @@ export default function BoardDisplay() {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      {showWarningModal && renderWarningModal()}
+      {showLoginOverlay && (
+        <NostrLoginOverlay onSuccess={handleLoginSuccess} onClose={handleLoginClose} />
+      )}
+      {showPaymentQR && renderPaymentQR()}
     </div>
   );
 }
