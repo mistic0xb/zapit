@@ -60,9 +60,6 @@ function NostrLoginOverlay({ onSuccess, onClose }: NostrLoginOverlayProps) {
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
                 Connect Nostr Extension
               </h2>
-              <p className="text-gray-400 text-sm sm:text-base">
-                To make your board explorable, sign in with your Nostr extension
-              </p>
             </div>
             <button
               onClick={handleLogin}
@@ -97,9 +94,6 @@ function NostrLoginOverlay({ onSuccess, onClose }: NostrLoginOverlayProps) {
             <h2 className="text-2xl sm:text-3xl font-bold text-green-400 mb-3 animate-[fade-in_0.5s_ease-out_0.3s_both] text-center">
               Connected Successfully!
             </h2>
-            <p className="text-gray-300 text-sm sm:text-base animate-[fade-in_0.5s_ease-out_0.5s_both]">
-              Your board will be explorable
-            </p>
           </div>
         )}
 
