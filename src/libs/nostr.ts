@@ -400,3 +400,24 @@ function checkEligibility(
     nip05,
   };
 }
+
+// Fetch nip05 identifier from pubkey
+export async function getProfileNip05(hexPubkey: string): Promise<string | null> {
+  const pool = getPool();
+
+  const events = await pool.querySync(
+    DEFAULT_RELAYS, {
+    kinds: [0],
+    authors: [hexPubkey]
+  });
+
+  if (!events.length) return null;
+
+  try {
+    const meta = JSON.parse(events[0].content);
+    console.log(meta.nip05);
+    return meta.nip05 ?? null;
+  } catch {
+    return null;
+  }
+}

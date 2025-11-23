@@ -1,6 +1,8 @@
 import { BsLightning } from "react-icons/bs";
 import type { BoardConfig } from "../types/types";
 import { BiChevronRight } from "react-icons/bi";
+import { getProfileNip05 } from "../libs/nostr";
+import { useEffect, useState } from "react";
 
 interface BoardCardProps {
   board: BoardConfig;
@@ -32,6 +34,11 @@ function formatDate(timestamp: number): String {
 }
 
 export default function BoardCard({ board, onClick }: BoardCardProps) {
+  const [creatorName, setCreatorName] = useState<string | null>(null);
+  useEffect(() => {
+    getProfileNip05(board.creatorPubkey).then(name => setCreatorName(name));
+  }, [board.creatorPubkey]);
+
   return (
     <button
       onClick={onClick}
@@ -47,7 +54,11 @@ export default function BoardCard({ board, onClick }: BoardCardProps) {
             <h3 className="text-lg sm:text-xl font-bold text-white mb-1 truncate group-hover:text-yellow-text/90 transition-colors">
               {board.boardName}
             </h3>
-            <p className="text-xs text-gray-500 md:text-base">{board.boardId.slice(0, 8)}</p>
+            <p className="lg:text-xs text-gray-500 md:text-base">
+              boardId: {board.boardId.slice(0, 8)}..
+            </p>
+
+            <p className="lg:text-md text-violet-300/60 md:text-base mb-2">{creatorName}</p>
             <p className="text-xs text-gray-500">{formatDate(board.createdAt)}</p>
           </div>
 
