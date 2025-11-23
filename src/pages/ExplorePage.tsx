@@ -5,6 +5,7 @@ import BoardCard from "../components/BoardCard";
 import { useNavigate } from "react-router";
 import { BsLightning, BsGrid3X3 } from "react-icons/bs";
 import { FiSearch } from "react-icons/fi";
+import { nip19 } from "nostr-tools";
 
 export default function ExploreBoards() {
   const [boards, setBoards] = useState<BoardConfig[]>([]);
@@ -27,13 +28,32 @@ export default function ExploreBoards() {
 
   // Filter boards based on search query
   const filteredBoards = boards.filter(board => {
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
 
-    return (
+    // Direct text matches
+    const directMatch =
       board.boardName?.toLowerCase().includes(q) ||
       board.boardId?.toLowerCase().includes(q) ||
-      board.creatorPubkey?.toLowerCase().includes(q)
-    );
+      board.nip05Identifier?.toLowerCase().includes(q) ||
+      board.creatorPubkey?.toLowerCase().includes(q);
+
+    if (directMatch) return true;
+
+    // Handle npub search
+    if (q.startsWith("npub1")) {
+      try {
+        const decode = nip19.decode(q);
+        if ((decode.type = "npub")) {
+          const hexPubKey = decode.data as string;
+          return board.creatorPubkey?.toLowerCase() === hexPubKey.toLowerCase();
+        }
+      } catch (error) {
+        console.debug("Failed to decode npub:", error);
+      }
+    }
+
+    return false;
   });
 
   return (
@@ -65,13 +85,13 @@ export default function ExploreBoards() {
             </div>
 
             {/* Search Bar */}
-            <div className="relative max-w-md">
+            <div className="relative max-w-lg">
               <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search boards..."
+                placeholder="Find boards using name, ID, NIP-05, or creator's npub"
                 className="w-full pl-12 pr-4 py-3 bg-card-bg text-white placeholder-gray-600 border-2 border-border-purple focus:border-yellow-text/80 focus:outline-none transition-colors text-sm sm:text-base"
               />
             </div>
