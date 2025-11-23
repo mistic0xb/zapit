@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="520" height="520">
+      <!-- Left outer arc -->
+      <path d="M 100,100 A 180 180 0 0 0 100,360"
+            fill="none"
+            stroke="#8c52ff"
+            stroke-width="42"
+            stroke-linecap="round" />
+
+      <!-- Left inner arc -->
+      <path d="M 145,145 A 120 120 0 0 0 145,315"
+            fill="none"
+            stroke="#8c52ff"
+            stroke-width="38"
+            stroke-linecap="round" />
+
+      <!-- Right inner arc -->
+      <path d="M 355,145 A 120 120 0 0 1 355,315"
+            fill="none"
+            stroke="#8c52ff"
+            stroke-width="38"
+            stroke-linecap="round" />
+
+      <!-- Right outer arc -->
+      <path d="M 400,100 A 180 180 0 0 1 400,360"
+            fill="none"
+            stroke="#8c52ff"
+            stroke-width="42"
+            stroke-linecap="round" />
+
+      <!-- Lightning bolt -->
+      <path d="M 324,84 L 264,214 L 372,222 L 182,394 L 232,256 L 116,248 Z"
+            fill="#ffac33"
+            stroke="#ffac33"
+            stroke-width="2"
+            stroke-linejoin="round" />
+</svg>

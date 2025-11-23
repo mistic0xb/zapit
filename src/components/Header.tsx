@@ -9,8 +9,8 @@ export default function Header() {
       <div className="w-full mx-auto flex items-center justify-between px-8">
         <div onClick={() => navigate("/")} className="flex items-center gap-3 cursor-pointer group">
           <img
-            src="/lnzapboard-logo.png"
-            alt="lnzapboard logo"
+            src="/zapit-logo.svg"
+            alt="zapit logo"
             className="w-10 h-10 proj:w-14 proj:h-14 object-contain group-hover:scale-110 transition-transform duration-200"
           />
           <span className="text-yellow-400 font-bold text-2xl proj:text-4xl tracking-wide group-hover:text-yellow-300 transition-colors flex justify-end items-baseline">
