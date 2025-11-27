@@ -3,6 +3,7 @@ import { FiZap } from "react-icons/fi";
 import { MdSettings, MdVerified } from "react-icons/md";
 import { BiGlobe } from "react-icons/bi";
 import { useNavigate } from "react-router";
+import { AiOutlineLink } from "react-icons/ai";
 
 function Pricing() {
   const navigate = useNavigate();
@@ -35,23 +36,24 @@ function Pricing() {
       premium: true,
       icon: <BiGlobe className="inline ml-1 text-yellow-text" />,
     },
-    // {
-    //   name: "Custom Board URL",
-    //   basic: false,
-    //   premium: true,
-    // },
-    // {
-    //   name: "Short Shareable URL",
-    //   basic: false,
-    //   premium: true,
-    //   icon: <AiOutlineLink className="inline ml-1 text-yellow-text" />,
-    // },
+    {
+      name: "Custom Board URL",
+      note: "additional 2.1k sats per custom name reservation",
+      basic: false,
+      premium: true,
+    },
+    {
+      name: "Short Shareable URL",
+      basic: false,
+      premium: true,
+      icon: <AiOutlineLink className="inline ml-1 text-yellow-text" />,
+    },
     {
       name: "Access to Settings",
       basic: false,
       premium: true,
       icon: <MdSettings className="inline ml-1 text-yellow-text" />,
-    }
+    },
   ];
 
   return (
@@ -143,7 +145,7 @@ function Pricing() {
                 </p>
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-4xl sm:text-5xl md:text-6xl proj:text-8xl font-bold text-yellow-text">
-                    3,900
+                    3.9K
                   </span>
                   <span className="text-base sm:text-lg md:text-xl proj:text-3xl text-gray-400">
                     sats
@@ -173,6 +175,11 @@ function Pricing() {
                     <span className="text-gray-300">
                       {feature.name}
                       {feature.premium && !feature.basic && feature.icon}
+                      {feature.note && (
+                        <div className="text-xs sm:text-sm text-gray-600/70 mt-1">
+                          {feature.note}
+                        </div>
+                      )}
                     </span>
                   </div>
                 ))}

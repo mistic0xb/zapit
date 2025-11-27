@@ -143,6 +143,7 @@ function Home() {
           </div>
         </div>
       </div>
+      {/* Pricing Section */}
       <Pricing />
     </div>
   );
