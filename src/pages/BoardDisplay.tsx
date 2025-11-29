@@ -41,6 +41,32 @@ const RANK_COLORS = [
   },
 ];
 
+// helper
+const renderMessageWithLinks = (txt: string) => {
+  const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\s]*)/g;
+
+  const parts = txt.split(urlRegex);
+
+  return parts.map((part: string, index: number) => {
+    if (part.match(urlRegex)) {
+      const href = part.startsWith("http") ? part : `https://${part}`;
+
+      return (
+        <a
+          key={index}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-violet-300/60 hover:text-violet-300/70 underline decoration-violet-200/50 hover:decoration-violet-200 transition-all wrap-break-word"
+        >
+          {part}
+        </a>
+      );
+    }
+    return <span key={index}>{part}</span>;
+  });
+};
+
 export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } = {}) {
   const navigate = useNavigate();
   const { boardId: boardIdParam } = useParams<{ boardId: string }>();
@@ -620,8 +646,8 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
                         </div>
                       </div>
                     </div>
-                    <p className="text-slate-400/90 text-xl proj:text-4xl pt-4 max-w-[1600px] whitespace-normal break-all">
-                      {msg.content}
+                    <p className="text-slate-400/90 text-xl proj:text-4xl pt-4 max-w-[1600px] whitespace-normal wrap-break-word">
+                      {renderMessageWithLinks(msg.content)}
                     </p>
                   </div>
                 ))
@@ -693,9 +719,9 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
                           <div>
                             {m.content && (
                               <div
-                                className={`text-2xl proj:text-3xl ${rankColor.light} mt-1 w-full text-wrap break-all`}
+                                className={`text-2xl proj:text-3xl ${rankColor.light} mt-1 w-full text-wrap wrap-break-word`}
                               >
-                                {m.content}
+                                {renderMessageWithLinks(m.content)}
                               </div>
                             )}
                           </div>
