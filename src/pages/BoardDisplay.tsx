@@ -673,10 +673,10 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
                       />
                     )}
 
-                    <span className="animate-pulse wrap-break-words text-center leading-tight flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                    <span className="animate-pulse wrap-break-words text-center leading-tight proj:text-6xl flex-wrap items-center justify-center gap-1.5 sm:gap-2">
                       {boardConfig.boardName}
                       {boardConfig.isExplorable && (
-                        <RiVerifiedBadgeFill className="text-base sm:text-lg md:text-xl proj:text-7xl text-violet-300 inline-block ml-1" />
+                        <RiVerifiedBadgeFill className="text-base sm:max-md:text-lg md:max-proj:text-xl proj:text-5xl text-violet-300 inline-block ml-1" />
                       )}
                     </span>
                   </div>
