@@ -38,7 +38,7 @@ function Pricing() {
     },
     {
       name: "Custom Board URL",
-      note: "additional 2.1k sats per custom name reservation",
+      note: "additional 110 sats per custom name reservation",
       basic: false,
       premium: true,
     },
@@ -145,7 +145,7 @@ function Pricing() {
                 </p>
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-4xl sm:text-5xl md:text-6xl proj:text-8xl font-bold text-yellow-text">
-                    3.9K
+                    1.1K
                   </span>
                   <span className="text-base sm:text-lg md:text-xl proj:text-3xl text-gray-400">
                     sats
