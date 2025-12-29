@@ -1,4 +1,25 @@
 lnzapboard.mistic.xyz, zapit.space {
+    header {
+       Content-Security-Policy "frame-ancestors *"
+       # X-Frame-Options "ALLOW-FROM https://www.example.com/"
+
+       # Disable modern anti-embedding protections
+       Cross-Origin-Opener-Policy "unsafe-none"
+       Cross-Origin-Embedder-Policy "unsafe-none"
+       Cross-Origin-Resource-Policy "cross-origin"
+
+       # CORS headers
+       Access-Control-Allow-Origin "*"
+       Access-Control-Allow-Methods "GET, POST, OPTIONS"
+       Access-Control-Allow-Headers "*"
+   }
+
+  # Handle OPTIONS requests (preflight)
+    @options {
+        method OPTIONS
+    }
+    respond @options 204
+
     root * /srv
     file_server
     try_files {path} /index.html
