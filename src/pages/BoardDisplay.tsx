@@ -101,6 +101,13 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const STATS_TOGGLE_KEY = "board_show_stats";
+
+  const [showStats, setShowStats] = useState<boolean>(() => {
+    const saved = safeLocalStorage.getItem(STATS_TOGGLE_KEY);
+    return saved === null ? true : saved === "true";
+  });
+
   useEffect(() => {
     const loadBoard = async () => {
       if (!boardId) return;
@@ -165,7 +172,7 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
     );
 
     return () => unsubscribe();
-  }, [boardId, boardConfig]);
+  }, [boardId, boardConfig, isMuted, volume]);
 
   const totalSats = useMemo(() => messages.reduce((sum, m) => sum + m.zapAmount, 0), [messages]);
   const sortedMessages = useMemo(
@@ -203,7 +210,11 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
       }
     });
     setPrevLeaders(currentLeaderIds);
-  }, [leaderboard, isMuted, volume]);
+  }, [leaderboard, isMuted, volume, prevLeaders]);
+
+  useEffect(() => {
+    safeLocalStorage.setItem(STATS_TOGGLE_KEY, String(showStats));
+  }, [showStats]);
 
   // Handle "Make Board Explorable" button click - show warning first
   const handleMakeExplorable = () => {
@@ -235,6 +246,7 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
         setEligibilityError(result.reason || "Not eligible to create explorable board");
       }
     } catch (err) {
+      console.log("ERR:", err);
       setIsVerifyingEligibility(false);
       setEligibilityError("Failed to verify eligibility. Please try again.");
     }
@@ -271,6 +283,7 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
         }
       );
     } catch (err) {
+      console.log("ERR:", err);
       setError("Failed to initiate payment");
     }
   };
@@ -621,6 +634,32 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
                             </span>
                           </div>
                         </div>
+                        {/* Stats Toggle */}
+                        <div className="space-y-2">
+                          <p className="text-gray-400 text-xs sm:text-sm font-semibold uppercase tracking-wide">
+                            Display
+                          </p>
+
+                          <button
+                            onClick={() => setShowStats(prev => !prev)}
+                            className="w-full flex items-center justify-between gap-3 text-gray-300 hover:text-yellow-text hover:bg-card-bg p-2 rounded-lg transition-all duration-200"
+                          >
+                            <span className="text-sm sm:text-base">Show Stats</span>
+
+                            {/* Toggle */}
+                            <div
+                              className={`w-10 h-5 flex items-center rounded-full p-1 transition-all ${
+                                showStats ? "bg-yellow-text" : "bg-gray-600"
+                              }`}
+                            >
+                              <div
+                                className={`bg-blackish w-3.5 h-3.5 rounded-full shadow-md transform transition-all ${
+                                  showStats ? "translate-x-5" : "translate-x-0"
+                                }`}
+                              />
+                            </div>
+                          </button>
+                        </div>
 
                         {/* Divider */}
                         <div className="border-t border-border-purple" />
@@ -685,20 +724,22 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="card-style flex flex-col gap-2 p-4 text-center font-semibold text-yellow-500">
-                <span className="text-md lg:max-proj:text-lg proj:text-3xl">Total Sats</span>
-                <span className="text-yellow-300/90 text-xl lg:max-proj:text-2xl proj:text-7xl">
-                  {totalSats}
-                </span>
+            {showStats && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="card-style flex flex-col gap-2 p-4 text-center font-semibold text-yellow-500">
+                  <span className="text-md lg:max-proj:text-lg proj:text-3xl">Total Sats</span>
+                  <span className="text-yellow-300/90 text-xl lg:max-proj:text-2xl proj:text-7xl">
+                    {totalSats}
+                  </span>
+                </div>
+                <div className="card-style flex flex-col gap-2 p-4 text-center font-semibold text-yellow-500">
+                  <span className="text-md lg:max-proj:text-lg proj:text-3xl">Total Messages</span>
+                  <span className="text-yellow-300/90 text-xl lg:max-proj:text-2xl proj:text-7xl">
+                    {messages.length}
+                  </span>
+                </div>
               </div>
-              <div className="card-style flex flex-col gap-2 p-4 text-center font-semibold text-yellow-500">
-                <span className="text-md lg:max-proj:text-lg proj:text-3xl">Total Messages</span>
-                <span className="text-yellow-300/90 text-xl lg:max-proj:text-2xl proj:text-7xl">
-                  {messages.length}
-                </span>
-              </div>
-            </div>
+            )}
             {/* Live messages */}
             <div className="card-style p-6 overflow-y-auto h-full max-h-[70vh] scrollbar-custom">
               {sortedMessages.length === 0 ? (
