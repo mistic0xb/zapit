@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router";
 import { QRCodeSVG } from "qrcode.react";
 import { fetchBoardConfig, subscribeToZapMessages, publishBoardConfig } from "../libs/nostr";
@@ -117,8 +117,10 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
         const config = await fetchBoardConfig(boardId);
         if (config) {
           setBoardConfig(config);
-          // Check if this board can be upgraded
-          checkCanUpgrade(boardId, config);
+          // Check if this board can be upgraded & only if it's not already explorable
+          if (!config.isExplorable) {
+            checkCanUpgrade(boardId, config);
+          }
         } else {
           const boards = JSON.parse(safeLocalStorage.getItem("boards") || "[]");
           const board = boards.find((b: any) => b.boardId === boardId);
@@ -141,14 +143,16 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
   }, [boardId]);
 
   // Check if board can be upgraded (exists in safeLocalStorage && not explorable)
-  const checkCanUpgrade = (boardId: string, config: BoardConfig) => {
+  const checkCanUpgrade = useCallback((boardId: string, config: BoardConfig) => {
     const boards: StoredBoard[] = JSON.parse(safeLocalStorage.getItem("boards") || "[]");
     const ownedBoard = boards.find(b => b.boardId === boardId);
 
     if (ownedBoard && !config.isExplorable) {
       setCanUpgrade(true);
+    } else {
+      setCanUpgrade(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (!boardId || !boardConfig) return;
@@ -210,7 +214,7 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
       }
     });
     setPrevLeaders(currentLeaderIds);
-  }, [leaderboard, isMuted, volume, prevLeaders]);
+  }, [leaderboard, isMuted, volume]);
 
   useEffect(() => {
     safeLocalStorage.setItem(STATS_TOGGLE_KEY, String(showStats));

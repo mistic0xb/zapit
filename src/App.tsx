@@ -9,6 +9,7 @@ import ZapMe from "./pages/ZapMe";
 import ExplorePage from "./pages/ExplorePage";
 import SettingsPage from "./pages/SettingsPage";
 import SlugBoard from "./pages/SlugRedirect";
+import NpubBoard from "./pages/NpubBoard";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/board/:boardId" element={<BoardDisplay />} />
             <Route path="/b/:slug" element={<SlugBoard />} />
             <Route path="/pay/:boardId" element={<PaymentPage />} />
+            <Route path="/:npub" element={<NpubBoard />} />
             <Route path="/zapme" element={<ZapMe />} />
           </Routes>
         </div>

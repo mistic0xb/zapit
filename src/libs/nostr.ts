@@ -1,6 +1,6 @@
 import { SimplePool, finalizeEvent } from "nostr-tools";
 import type { Event, Filter } from "nostr-tools";
-import type { BoardConfig, ZapMessage } from "../types/types";
+import type { BoardConfig, NostrProfile, ZapMessage } from "../types/types";
 import { parseZapReceipt } from "./nip57";
 
 export const DEFAULT_RELAYS = ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.snort.social"];
@@ -421,6 +421,28 @@ export async function getProfileNip05(hexPubkey: string): Promise<string | null>
     const meta = JSON.parse(events[0].content);
     return meta.nip05 ?? null;
   } catch {
+    return null;
+  }
+}
+
+// Fetch user profile metadata (kind 0)
+export async function fetchUserProfile(hexPubkey: string): Promise<NostrProfile | null> {
+  const pool = getPool();
+
+  const events = await pool.querySync(DEFAULT_RELAYS, {
+    kinds: [0],
+    authors: [hexPubkey],
+    limit: 1,
+  });
+
+  if (!events || events.length === 0) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(events[0].content) as NostrProfile;
+  } catch (err) {
+    console.error("Failed to parse profile data:", err);
     return null;
   }
 }
