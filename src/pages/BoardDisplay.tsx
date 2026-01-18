@@ -733,13 +733,13 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
                 <div className="card-style flex flex-col gap-2 p-4 text-center font-semibold text-yellow-500">
                   <span className="text-md lg:max-proj:text-lg proj:text-3xl">Total Sats</span>
                   <span className="text-yellow-300/90 text-xl lg:max-proj:text-2xl proj:text-7xl">
-                    {totalSats}
+                    {totalSats.toLocaleString()}
                   </span>
                 </div>
                 <div className="card-style flex flex-col gap-2 p-4 text-center font-semibold text-yellow-500">
                   <span className="text-md lg:max-proj:text-lg proj:text-3xl">Total Messages</span>
                   <span className="text-yellow-300/90 text-xl lg:max-proj:text-2xl proj:text-7xl">
-                    {messages.length}
+                    {messages.length.toLocaleString()}
                   </span>
                 </div>
               </div>
