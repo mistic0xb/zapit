@@ -22,6 +22,7 @@ import { safeLocalStorage } from "../libs/safeStorage";
 import { GiArmorUpgrade, GiConfirmed } from "react-icons/gi";
 import { IoWarning } from "react-icons/io5";
 import { HiMenu, HiX } from "react-icons/hi";
+import { generateRandomName } from "../libs/randomNameGen";
 
 const RANK_COLORS = [
   {
@@ -78,6 +79,7 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
   const [messages, setMessages] = useState<ZapMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [prevLeaders, setPrevLeaders] = useState<string[]>([]);
+  const [randomName] = useState(() => generateRandomName());
   const [error, setError] = useState("");
 
   const [volume, setVolume] = useState(0);
@@ -766,7 +768,7 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
                           </span>
                         </div>
                         <span className="text-violet-300/80 font-medium text-sm sm:max-lg:text-base lg:max-proj:text-lg proj:text-3xl">
-                          {msg.displayName || "Anonymous"}
+                          {msg.displayName || randomName}
                         </span>
                       </div>
                       <div className="flex flex-col items-end">
@@ -834,7 +836,7 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
                                 {i + 1}
                               </div>
                               <div className={`font-bold ${rankColor.text} text-lg proj:text-2xl`}>
-                                {m.displayName || "Anon"}
+                                {m.displayName || randomName}
                               </div>
                             </div>
                             <div

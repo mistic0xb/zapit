@@ -7,11 +7,13 @@ import { publishBoardConfig } from "../libs/nostr";
 import type { BoardConfig, StoredBoard } from "../types/types";
 import Loading from "../components/Loading";
 import { FiAlertCircle } from "react-icons/fi";
+import { generateRandomName } from "../libs/randomNameGen";
 
 export default function NpubBoard() {
   const { npub } = useParams<{ npub: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [randomName] = useState(() => generateRandomName());
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -84,7 +86,7 @@ export default function NpubBoard() {
         }
 
         // Extract username
-        const username = profileData.name || profileData.display_name || "Anonymous";
+        const username = profileData.name || profileData.display_name || randomName;
         const boardName = `${username}'s board`;
         const keys = generateEphemeralKeys();
 

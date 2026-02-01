@@ -7,6 +7,7 @@ import type { BoardConfig, ZapMessage } from "../types/types";
 import { FaCopy, FaCheckCircle } from "react-icons/fa";
 import { BsLightning } from "react-icons/bs";
 import Loading from "../components/Loading";
+import { generateRandomName } from "../libs/randomNameGen";
 
 function PaymentPage() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -22,6 +23,7 @@ function PaymentPage() {
   const [invoice, setInvoice] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [randomName] = useState(() => generateRandomName());
   const [error, setError] = useState("");
 
   const MAX_MESSAGE_LENGTH = 132;
@@ -117,7 +119,7 @@ function PaymentPage() {
         message,
         boardId,
         recipientPubkey: boardConfig.creatorPubkey,
-        displayName: displayName.trim() || "Anonymous",
+        displayName: displayName?.trim() || randomName,
       });
 
       if (!invoiceData || !invoiceData.invoice) {
@@ -191,7 +193,7 @@ function PaymentPage() {
                   type="text"
                   value={displayName}
                   onChange={e => setDisplayName(e.target.value)}
-                  placeholder="Anonymous"
+                  placeholder={randomName}
                   maxLength={50}
                   className="w-full px-4 py-3 bg-blackish text-white placeholder-gray-600 border-2 border-border-purple focus:border-yellow-text/80 focus:outline-none transition-colors text-base"
                 />

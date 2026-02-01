@@ -1,6 +1,7 @@
 import { makeZapRequest, validateZapRequest } from "nostr-tools/nip57";
 import { generateSecretKey, finalizeEvent } from "nostr-tools";
 import type { EventTemplate } from "nostr-tools";
+import { generateRandomName } from "./randomNameGen";
 
 interface GenerateInvoiceParams {
   lightningAddress: string;
@@ -131,7 +132,7 @@ export function parseZapReceipt(zapReceipt: any): {
 
     // Extract displayName tag
     const displayNameTag = zapRequest.tags?.find((t: string[]) => t[0] === "displayName");
-    const displayName = displayNameTag?.[1] || "Anonymous";
+    const displayName = displayNameTag?.[1] || generateRandomName();
     console.log("parseZapReq> displayName:", displayName);
 
     // Extract amount from zap request
