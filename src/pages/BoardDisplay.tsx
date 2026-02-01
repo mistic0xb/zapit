@@ -80,6 +80,7 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
   const [loading, setLoading] = useState(true);
   const [prevLeaders, setPrevLeaders] = useState<string[]>([]);
   const [randomName] = useState(() => generateRandomName());
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const [error, setError] = useState("");
 
   const [volume, setVolume] = useState(0);
@@ -762,12 +763,24 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
                   >
                     <div className="font-bold flex justify-between items-center gap-5">
                       <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-6 h-6 sm:max-proj:w-8 sm:max-proj:h-8 proj:w-12 proj:h-12 bg-violet-300/80 rounded-full flex items-center justify-center">
-                          <span className="text-black text-md sm:max-proj:text-lg proj:text-2xl font-bold">
-                            {msg.displayName?.[0]?.toUpperCase() || "A"}
-                          </span>
-                        </div>
-                        <span className="text-violet-300/80 font-medium text-sm sm:max-lg:text-base lg:max-proj:text-lg proj:text-3xl">
+                        {!avatarFailed ? (
+                          <img
+                            src={`https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${encodeURIComponent(msg.displayName || randomName)}`}
+                            alt="avatar"
+                            className="w-6 h-6 sm:max-proj:w-8 sm:max-proj:h-8 proj:w-12 proj:h-12 rounded-full bg-violet-500/20"
+                            onError={() => setAvatarFailed(true)}
+                          />
+                        ) : (
+                          <div
+                            className="w-6 h-6 sm:max-proj:w-8 sm:max-proj:h-8 proj:w-12 proj:h-12
+                    rounded-full bg-violet-300/80 flex items-center justify-center"
+                          >
+                            <span className="text-black font-bold">
+                              {msg.displayName?.[0]?.toUpperCase() || randomName[0].toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <span className="text-violet-300/80 font-medium">
                           {msg.displayName || randomName}
                         </span>
                       </div>
