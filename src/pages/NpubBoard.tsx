@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { nip19 } from "nostr-tools";
-import { fetchUserProfile } from "../libs/nostr";
-import { generateBoardId, generateEphemeralKeys } from "../libs/crypto";
+import { fetchUserProfile, fetchBoardConfig } from "../libs/nostr";
+import { generateEphemeralKeys } from "../libs/crypto";
 import { publishBoardConfig } from "../libs/nostr";
 import type { BoardConfig, StoredBoard } from "../types/types";
 import Loading from "../components/Loading";
@@ -15,7 +15,7 @@ export default function NpubBoard() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const createBoardFromNpub = async (npubString: string) => {
+    const loadOrCreateBoard = async (npubString: string) => {
       try {
         setLoading(true);
         setError("");
@@ -34,6 +34,36 @@ export default function NpubBoard() {
           return;
         }
 
+        // Check localStorage first
+        const boards: StoredBoard[] = JSON.parse(localStorage.getItem("boards") || "[]");
+        const existingBoard = boards.find(b => b.boardId === npubString);
+
+        if (existingBoard) {
+          console.log("Board found in localStorage, loading...");
+          navigate(`/board/${npubString}`);
+          return;
+        }
+
+        // Check Nostr relays
+        console.log("Board not in localStorage, checking Nostr relays...");
+        const boardConfig = await fetchBoardConfig(npubString);
+
+        if (boardConfig) {
+          console.log("Board found on Nostr relays, loading...");
+
+          // Save to localStorage for future use
+          boards.push({
+            boardId: npubString,
+            config: boardConfig,
+            createdAt: Date.now(),
+          });
+          localStorage.setItem("boards", JSON.stringify(boards));
+
+          navigate(`/board/${npubString}`);
+          return;
+        }
+
+        // Board doesn't exist, create new one
         // Fetch user profile
         const profileData = await fetchUserProfile(hexPubkey);
 
@@ -55,18 +85,12 @@ export default function NpubBoard() {
 
         // Extract username
         const username = profileData.name || profileData.display_name || "Anonymous";
-
-        // Generate board ID and ephemeral keys
-        const boardId = generateBoardId();
-        console.log("boardID:", boardId);
-        console.log("boardID sliced::", boardId.slice(0, 8));
-
-        const boardName = `${username}'s Board-${boardId.slice(0, 8)}`;
+        const boardName = `${username}'s board`;
         const keys = generateEphemeralKeys();
 
-        // Create board config
-        const boardConfig: BoardConfig = {
-          boardId,
+        // Create board config using npub as boardId
+        const newBoardConfig: BoardConfig = {
+          boardId: npubString, // using npub as boardId
           boardName,
           minZapAmount: 10, // Default 10 sats
           lightningAddress,
@@ -76,22 +100,21 @@ export default function NpubBoard() {
         };
 
         // Publish board config to Nostr
-        await publishBoardConfig(boardConfig, keys.privateKey, false);
+        await publishBoardConfig(newBoardConfig, keys.privateKey, false);
 
         // Save to localStorage
-        const boards: StoredBoard[] = JSON.parse(localStorage.getItem("boards") || "[]");
         boards.push({
-          boardId,
-          config: boardConfig,
+          boardId: npubString,
+          config: newBoardConfig,
           createdAt: Date.now(),
         });
         localStorage.setItem("boards", JSON.stringify(boards));
 
         // Navigate to board display
-        navigate(`/board/${boardId}`);
+        navigate(`/board/${npubString}`);
       } catch (err) {
-        console.error("Error creating board from npub:", err);
-        setError(err instanceof Error ? err.message : "Failed to create board");
+        console.error("Error loading/creating board from npub:", err);
+        setError(err instanceof Error ? err.message : "Failed to load or create board");
         setLoading(false);
       }
     };
@@ -102,7 +125,7 @@ export default function NpubBoard() {
       return;
     }
 
-    createBoardFromNpub(npub);
+    loadOrCreateBoard(npub);
   }, [npub, navigate]);
 
   if (loading) {
@@ -116,7 +139,7 @@ export default function NpubBoard() {
           <div className="flex items-start gap-4 mb-6">
             <FiAlertCircle className="text-red-400 text-3xl shrink-0 mt-1" />
             <div>
-              <h2 className="text-red-400 font-bold text-xl mb-2">Unable to Create Board</h2>
+              <h2 className="text-red-400 font-bold text-xl mb-2">Unable to Load Board</h2>
               <p className="text-gray-300 text-sm">{error}</p>
             </div>
           </div>
