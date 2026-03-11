@@ -22,16 +22,40 @@ services:
       - app_data:/srv
       - caddy_data:/data
       - caddy_config:/config
+      - glassabbey_data:/srv/glassabbey
+      - /home/angor/pekka/install.sh:/var/www/pekka/install.sh
     depends_on:
       - app
     networks:
       - app_network
+      - web
+
+  glassabbey:
+    build:
+      context: /home/angor/glassabbey/frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - glassabbey_data:/app/dist-volume
+    networks:
+      - app_network
+
+  auction-server:
+    build:
+      context: /home/angor/glassabbey/auction_server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - web
 
 volumes:
   app_data:
   caddy_data:
   caddy_config:
+  glassabbey_data:
 
 networks:
   app_network:
     driver: bridge
+  web:
+    external: true

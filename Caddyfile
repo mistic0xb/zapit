@@ -25,3 +25,26 @@ lnzapboard.mistic.xyz, zapit.space {
     try_files {path} /index.html
     encode gzip
 }
+
+planka.mistic.xyz {
+    reverse_proxy planka-planka-1:1337
+}
+
+pekka.mistic.xyz {
+    handle /install {
+        root * /var/www/pekka
+        rewrite * /install.sh
+        file_server
+    }
+}
+
+glassabbey.mistic.xyz {
+    handle /auction-ws {
+        reverse_proxy auction-server:8080
+    }
+    handle {
+        root * /srv/glassabbey
+        try_files {path} /index.html
+        file_server
+    }
+}
